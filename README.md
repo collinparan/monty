@@ -103,17 +103,17 @@ Memory persists between iterations via:
    cd monty
    ```
 
-2. Launch Claude Code:
+2. Run Monty:
    ```bash
-   claude --dangerously-skip-permissions
+   ./start.sh
    ```
 
-3. Tell Claude what you want to build:
+3. Tell Monty what you want to build:
    ```
    I want to build a realtime chat API with WebSocket support
    ```
 
-Claude reads `scripts/prompt.md` for patterns, creates user stories in `scripts/prd.json`, and starts implementing. You just have a conversation about what you're building.
+Monty launches Claude Code, reads `scripts/prompt.md` for patterns, asks clarifying questions, creates user stories in `scripts/prd.json`, and starts implementing. You just have a conversation about what you're building.
 
 ---
 
