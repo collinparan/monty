@@ -1,0 +1,79 @@
+# Monty Progress Log
+
+## Codebase Patterns
+
+READ THIS SECTION FIRST - These patterns have been established for this codebase:
+
+### Project Structure
+- All application code lives in `app/` directory
+- Services go in `app/services/` - one service per concern
+- Routers go in `app/routers/` - one router per domain
+- Models go in `app/models/` - SQLAlchemy models with `__init__.py` exports
+- Schemas go in `app/schemas/` - Pydantic models for API
+
+### Async Patterns
+- ALWAYS use async/await - never blocking calls
+- Use `asyncpg` for PostgreSQL, not `psycopg2`
+- Use `redis.asyncio` not sync `redis`
+- Use `aiohttp` or async OpenAI client for HTTP calls
+- Session management: use `async with` for database sessions
+
+### Database Patterns
+- PGVector: Use HNSW index with `vector_cosine_ops` for similarity
+- Embedding dimension: 1536 (OpenAI text-embedding-3-small)
+- Always use UUID primary keys: `Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)`
+- Timestamps: `created_at` and `updated_at` on all models
+- Use JSONB for flexible metadata fields
+
+### Graphiti Patterns
+- Always provide `reference_time` for episodes (use UTC)
+- Call `build_indices_and_constraints()` on startup
+- Episode names should be descriptive: `conversation_{id}`, `document_{id}`
+
+### FastAPI Patterns
+- Use lifespan context manager for startup/shutdown
+- Dependency injection for services via `Depends()`
+- Background tasks for non-blocking operations
+- Always include response_model in route decorators
+
+### WebSocket Patterns
+- Always handle `WebSocketDisconnect` exception
+- Use connection manager for multi-client scenarios
+- JSON message protocol: `{"type": "...", "content": "...", "metadata": {}}`
+- Persist session state to Redis on disconnect
+
+### SSE Patterns
+- Use `StreamingResponse` with `media_type="text/event-stream"`
+- Format: `data: {json}\n\n`
+- Always send `data: [DONE]\n\n` at stream end
+- Disable buffering in Nginx for SSE routes
+
+### Testing Patterns
+- Use `pytest-asyncio` for async tests
+- Fixtures in `conftest.py` for shared setup
+- Mock external APIs (OpenAI, etc.) in unit tests
+- Integration tests use real Docker services
+
+### Naming Conventions
+- Services: `{Domain}Service` (e.g., `EmbeddingService`, `AgentService`)
+- Routers: lowercase domain (e.g., `chat.py`, `websocket.py`)
+- Models: PascalCase singular (e.g., `Document`, `Session`)
+- Schemas: `{Model}Create`, `{Model}Response`, `{Model}Update`
+
+---
+
+## Story Progress
+
+(Completed stories will be logged here with learnings)
+
+---
+
+## Blockers and Notes
+
+(Any blockers or important notes will be logged here)
+
+---
+
+## Session Log
+
+Started: Awaiting first run

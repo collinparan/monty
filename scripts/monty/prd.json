@@ -1,0 +1,342 @@
+{
+  "projectName": "Realtime Agentic AI Platform",
+  "description": "A production-ready platform for building realtime agentic AI applications with streaming, tool use, and hybrid memory",
+  "techStack": {
+    "runtime": "Python 3.11+",
+    "framework": "FastAPI",
+    "vectorStore": "PostgreSQL + PGVector",
+    "graphStore": "Neo4j + Graphiti",
+    "cache": "Redis",
+    "orchestration": "Docker Compose"
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Docker Compose infrastructure setup",
+      "description": "Set up the core infrastructure with all required services",
+      "acceptanceCriteria": [
+        "docker-compose.yml with PostgreSQL (PGVector), Neo4j, Redis, Nginx",
+        "Health checks for all services",
+        "Persistent volumes for data",
+        "Network isolation between services",
+        ".env.example with all required variables",
+        "All services start successfully with `docker-compose up -d`"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-002",
+      "title": "FastAPI project scaffolding",
+      "description": "Create the base FastAPI application structure",
+      "acceptanceCriteria": [
+        "app/main.py with FastAPI app, CORS, lifespan handler",
+        "app/config.py with Pydantic Settings loading from .env",
+        "app/database.py with async SQLAlchemy engine and session",
+        "Dockerfile for the FastAPI application",
+        "pyproject.toml with dependencies (fastapi, uvicorn, sqlalchemy, asyncpg, pgvector, pydantic)",
+        "ruff.toml for linting configuration",
+        "Application starts and /health endpoint returns 200"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-003",
+      "title": "PostgreSQL + PGVector database setup",
+      "description": "Configure PostgreSQL with PGVector extension for embeddings",
+      "acceptanceCriteria": [
+        "Alembic migrations setup with async support",
+        "Initial migration enabling pgvector extension",
+        "Base model class with common fields (id, created_at, updated_at)",
+        "Database connection pool configuration",
+        "Test that PGVector extension is available"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-004",
+      "title": "Document model with embeddings",
+      "description": "Create the document model for storing content with vector embeddings",
+      "acceptanceCriteria": [
+        "Document model with: id (UUID), content (text), embedding (Vector 1536), metadata (JSONB), created_at",
+        "HNSW index on embedding column for cosine similarity",
+        "Alembic migration for the model",
+        "Model exports from app/models/__init__.py",
+        "Unit test for document creation"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "estimatedComplexity": "low"
+    },
+    {
+      "id": "US-005",
+      "title": "Embedding service",
+      "description": "Service for generating embeddings from text",
+      "acceptanceCriteria": [
+        "app/services/embeddings.py with EmbeddingService class",
+        "Support for OpenAI text-embedding-3-small (1536 dimensions)",
+        "Async implementation using aiohttp or openai async client",
+        "Batch embedding support for multiple texts",
+        "Caching layer with Redis (optional, based on config)",
+        "Unit tests with mocked API responses"
+      ],
+      "priority": 5,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-006",
+      "title": "Semantic search endpoint",
+      "description": "API endpoint for vector similarity search",
+      "acceptanceCriteria": [
+        "POST /api/v1/search endpoint",
+        "Request schema: query (str), top_k (int, default 5), filters (optional dict)",
+        "Response schema: results list with id, content, score, metadata",
+        "Uses PGVector cosine similarity with HNSW index",
+        "Integration test with sample documents"
+      ],
+      "priority": 6,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-007",
+      "title": "Neo4j + Graphiti service setup",
+      "description": "Initialize Graphiti for temporal knowledge graph operations",
+      "acceptanceCriteria": [
+        "app/services/graph.py with GraphService class",
+        "Graphiti client initialization with Neo4j connection",
+        "Index and constraint setup on startup",
+        "Methods: add_episode, search, get_entity_relationships",
+        "Connection health check",
+        "Integration test with sample episode"
+      ],
+      "priority": 7,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-008",
+      "title": "Hybrid memory service",
+      "description": "Unified memory service combining vector and graph retrieval",
+      "acceptanceCriteria": [
+        "app/services/memory.py with HybridMemory class",
+        "add_memory() stores in both vector and graph stores",
+        "recall() performs hybrid retrieval with ranking",
+        "Configurable weights for vector vs graph results",
+        "Session context management with Redis",
+        "Unit tests for memory operations"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "US-009",
+      "title": "Tool definition framework",
+      "description": "Framework for defining and executing agent tools",
+      "acceptanceCriteria": [
+        "app/services/tools.py with ToolRegistry class",
+        "ToolDefinition pydantic model with name, description, parameters (JSON Schema), handler",
+        "Tool registration and lookup by name",
+        "Async tool execution with error handling",
+        "Built-in tools: semantic_search, graph_search, get_datetime",
+        "Tool schema export for LLM function calling format"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-010",
+      "title": "Agent loop implementation",
+      "description": "Core agent loop with tool use and streaming",
+      "acceptanceCriteria": [
+        "app/services/agent.py with AgentService class",
+        "AgentState dataclass with messages, tools_called, context, iteration",
+        "Async generator yielding events: token, tool_call, tool_result, done",
+        "Integration with Claude API for chat completions",
+        "Tool execution within the loop",
+        "Configurable max iterations and timeout",
+        "Unit tests with mocked LLM responses"
+      ],
+      "priority": 10,
+      "status": "pending",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "US-011",
+      "title": "WebSocket agent endpoint",
+      "description": "Bidirectional realtime agent communication via WebSocket",
+      "acceptanceCriteria": [
+        "app/routers/websocket.py with WebSocket endpoint",
+        "WS /ws/agent/{session_id} endpoint",
+        "Connection manager for multiple clients",
+        "JSON message protocol: {type, content, metadata}",
+        "Session state persistence in Redis",
+        "Graceful disconnect handling",
+        "Integration test with websocket client"
+      ],
+      "priority": 11,
+      "status": "pending",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "US-012",
+      "title": "SSE streaming endpoint",
+      "description": "Server-Sent Events endpoint for agent streaming",
+      "acceptanceCriteria": [
+        "app/routers/stream.py with SSE endpoint",
+        "GET /api/v1/stream/agent/{session_id} endpoint",
+        "Query param: message (str)",
+        "text/event-stream response with proper formatting",
+        "Events: token, tool_call, tool_result, done, error",
+        "Timeout handling for long-running agents",
+        "Integration test with SSE client"
+      ],
+      "priority": 12,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-013",
+      "title": "Event bus with Redis Streams",
+      "description": "Event-driven communication between components",
+      "acceptanceCriteria": [
+        "app/utils/events.py with EventBus class",
+        "publish() to add events to stream",
+        "subscribe() async generator for consuming events",
+        "Consumer groups for reliable delivery",
+        "Event schemas: AgentEvent, ToolEvent, MemoryEvent",
+        "Dead letter queue for failed events",
+        "Unit tests for pub/sub flow"
+      ],
+      "priority": 13,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-014",
+      "title": "Conversation session management",
+      "description": "Manage agent conversation sessions with persistence",
+      "acceptanceCriteria": [
+        "app/services/session.py with SessionManager class",
+        "Session model with: id, user_id, messages, state, created_at, updated_at",
+        "Create, get, update, delete session operations",
+        "Message history with configurable window size",
+        "Session timeout and cleanup",
+        "REST endpoints: POST /sessions, GET /sessions/{id}, DELETE /sessions/{id}",
+        "Unit tests for session lifecycle"
+      ],
+      "priority": 14,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-015",
+      "title": "REST chat endpoint",
+      "description": "Traditional request/response chat endpoint",
+      "acceptanceCriteria": [
+        "app/routers/chat.py with chat endpoint",
+        "POST /api/v1/chat endpoint",
+        "Request: session_id (optional), message (str), stream (bool, default false)",
+        "Response: session_id, response, tool_calls, usage",
+        "Creates new session if session_id not provided",
+        "Non-streaming returns complete response",
+        "Integration test with multiple turns"
+      ],
+      "priority": 15,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-016",
+      "title": "Nginx reverse proxy configuration",
+      "description": "Configure Nginx for WebSocket and SSE support",
+      "acceptanceCriteria": [
+        "docker/nginx/nginx.conf with upstream configuration",
+        "WebSocket upgrade handling for /ws/* paths",
+        "SSE support with proper buffering disabled for /stream/* paths",
+        "Health check endpoint forwarding",
+        "Rate limiting configuration",
+        "CORS headers for API endpoints",
+        "Test WebSocket and SSE through Nginx"
+      ],
+      "priority": 16,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-017",
+      "title": "Agent tool: web_search",
+      "description": "Tool for searching the web during agent execution",
+      "acceptanceCriteria": [
+        "web_search tool in app/services/tools.py",
+        "Integration with search API (Tavily, Serper, or similar)",
+        "Parameters: query (str), num_results (int, default 5)",
+        "Returns: list of {title, url, snippet}",
+        "Rate limiting and error handling",
+        "Unit test with mocked API"
+      ],
+      "priority": 17,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-018",
+      "title": "Agent tool: code_executor",
+      "description": "Sandboxed code execution tool for agents",
+      "acceptanceCriteria": [
+        "code_executor tool in app/services/tools.py",
+        "Sandboxed Python execution using Docker or subprocess",
+        "Parameters: code (str), timeout (int, default 30)",
+        "Returns: stdout, stderr, exit_code",
+        "Resource limits (memory, CPU, time)",
+        "Security: no network, no file system access outside sandbox",
+        "Unit test with safe code examples"
+      ],
+      "priority": 18,
+      "status": "pending",
+      "estimatedComplexity": "high"
+    },
+    {
+      "id": "US-019",
+      "title": "Observability and logging",
+      "description": "Structured logging and metrics for monitoring",
+      "acceptanceCriteria": [
+        "Structured JSON logging with structlog",
+        "Request ID propagation through async context",
+        "Metrics endpoint /metrics in Prometheus format",
+        "Key metrics: request latency, agent iterations, tool calls, errors",
+        "Log levels configurable via environment",
+        "Correlation ID in all agent events"
+      ],
+      "priority": 19,
+      "status": "pending",
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "US-020",
+      "title": "End-to-end integration tests",
+      "description": "Comprehensive integration tests for the platform",
+      "acceptanceCriteria": [
+        "tests/integration/ directory structure",
+        "Test fixtures for database, Redis, Neo4j",
+        "E2E test: document ingestion -> embedding -> search",
+        "E2E test: agent chat with tool use",
+        "E2E test: WebSocket conversation flow",
+        "E2E test: SSE streaming response",
+        "CI-ready with docker-compose for test services",
+        "All tests pass with `pytest tests/integration/`"
+      ],
+      "priority": 20,
+      "status": "pending",
+      "estimatedComplexity": "high"
+    }
+  ]
+}
