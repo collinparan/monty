@@ -97,16 +97,23 @@ Memory persists between iterations via:
 
 ## Quick Start
 
-```bash
-claude --dangerously-skip-permissions
-```
+1. Clone this repo and cd into it:
+   ```bash
+   git clone git@github.com:collinparan/monty.git
+   cd monty
+   ```
 
-Then tell Claude:
-```
-Read scripts/prompt.md and help me build a realtime agentic AI app
-```
+2. Launch Claude Code:
+   ```bash
+   claude --dangerously-skip-permissions
+   ```
 
-That's it. Monty will ask you what to build and start coding.
+3. Tell Claude what you want to build:
+   ```
+   I want to build a realtime chat API with WebSocket support
+   ```
+
+Claude reads `scripts/prompt.md` for patterns, creates user stories in `scripts/prd.json`, and starts implementing. You just have a conversation about what you're building.
 
 ---
 
