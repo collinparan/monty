@@ -69,7 +69,7 @@ echo ""
 
 # Launch Claude in interactive mode with the prompt context
 cd "$PROJECT_ROOT"
-exec claude --dangerously-skip-permissions -p "$(cat "$SCRIPT_DIR/prompt.md")
+exec claude --dangerously-skip-permissions --append-system-prompt "$(cat "$SCRIPT_DIR/prompt.md")
 
 ---
 

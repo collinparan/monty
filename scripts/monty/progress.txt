@@ -1,0 +1,104 @@
+# Sears Home Services Technician Analytics Platform - Progress Log
+
+## Codebase Patterns
+
+READ THIS SECTION FIRST - These patterns have been established for this codebase:
+
+### Project Structure
+- All application code lives in `app/` directory
+- Services go in `app/services/` - one service per concern
+- ML services go in `app/services/ml/` - InterpretML, Prophet
+- Routers go in `app/routers/` - one router per domain
+- Models go in `app/models/` - SQLAlchemy models with `__init__.py` exports
+- Schemas go in `app/schemas/` - Pydantic models for API
+- Static files in `app/static/` - dashboard HTML/CSS/JS
+- Trained models stored in `/models/` volume mount
+
+### Async Patterns
+- ALWAYS use async/await - never blocking calls
+- Use `asyncpg` for PostgreSQL, not `psycopg2`
+- Use `redis.asyncio` not sync `redis`
+- Use `aiohttp` or async OpenAI client for HTTP calls
+- Snowflake: use `run_in_executor` for sync connector calls
+- Session management: use `async with` for database sessions
+
+### Database Patterns
+- PGVector: Use HNSW index with `vector_cosine_ops` for similarity
+- Embedding dimension: 1536 (OpenAI text-embedding-3-small)
+- Always use UUID primary keys: `Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)`
+- Timestamps: `created_at` and `updated_at` on all models
+- Use JSONB for flexible metadata fields (metrics, explanations)
+
+### Snowflake Patterns
+- Key-pair JWT authentication with private key file
+- Connection: use snowflake-connector-python
+- Queries: wrap in run_in_executor for async compatibility
+- Cache results in Redis with configurable TTL
+- Tables in PRD_AGENTIC_SOLUTIONS.DATA_SOURCES schema
+
+### ML Model Patterns
+- InterpretML for interpretable models (EBM, Decision Tree)
+- Prophet for time-series forecasting
+- Serialize models with joblib to .sav files
+- Store in /models/{model_type}/{version}/ directory
+- Track model metadata in TrainedModel table
+- Explanations: global (feature importance) + local (per-prediction)
+
+### Dashboard Patterns
+- Simple HTML/JS served by FastAPI static files
+- Chart.js for visualizations (line charts, bar charts)
+- Prophet forecast: line chart with confidence intervals
+- Feature importance: horizontal bar chart
+- Real-time updates via SSE for long-running operations
+
+### Agent Patterns
+- Domain-specific system prompt for technician analytics
+- Tools for querying data, predictions, forecasts, ROI calculations
+- Natural language explanations: "Your X adds Y to the score..."
+- Streaming responses via SSE
+- Session state in Redis
+
+### FastAPI Patterns
+- Use lifespan context manager for startup/shutdown
+- Dependency injection for services via `Depends()`
+- Background tasks for model training (non-blocking)
+- Always include response_model in route decorators
+
+### SSE Patterns
+- Use `StreamingResponse` with `media_type="text/event-stream"`
+- Format: `data: {json}\n\n`
+- Always send `data: [DONE]\n\n` at stream end
+- Disable buffering in Nginx for SSE routes
+
+### Testing Patterns
+- Use `pytest-asyncio` for async tests
+- Fixtures in `conftest.py` for shared setup
+- Mock external APIs (OpenAI, Snowflake) in unit tests
+- Integration tests use real Docker services
+
+### Naming Conventions
+- Services: `{Domain}Service` (e.g., `InterpretMLService`, `SnowflakeService`)
+- Routers: lowercase domain (e.g., `dashboard.py`, `agent.py`)
+- Models: PascalCase singular (e.g., `Technician`, `Prediction`)
+- Schemas: `{Model}Create`, `{Model}Response`, `{Model}Update`
+
+---
+
+## Story Progress
+
+(Completed stories will be logged here with learnings)
+
+---
+
+## Blockers and Notes
+
+- Snowflake private key file (sf_rsa_key.p8) must be provided separately - NOT in git
+- Need to discover actual table schemas in Snowflake DATA_SOURCES schema
+
+---
+
+## Session Log
+
+Started: 2024-01-06
+Project: Sears Home Services Technician Analytics Platform
+Goal: Predict technician recruitment/retention with explainable AI
