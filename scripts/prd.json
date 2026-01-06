@@ -2,7 +2,7 @@
   "projectName": "Realtime Agentic AI Platform",
   "description": "A production-ready platform for building realtime agentic AI applications with streaming, tool use, and hybrid memory",
   "techStack": {
-    "runtime": "Python 3.11+",
+    "runtime": "Python 3.14+",
     "framework": "FastAPI",
     "vectorStore": "PostgreSQL + PGVector",
     "graphStore": "Neo4j + Graphiti",
