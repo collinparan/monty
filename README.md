@@ -98,23 +98,15 @@ Memory persists between iterations via:
 ## Quick Start
 
 ```bash
-./start.sh
+claude --dangerously-skip-permissions
 ```
 
-That's it. Monty will ask you what to build.
+Then tell Claude:
+```
+Read scripts/prompt.md and help me build a realtime agentic AI app
+```
 
-### Prerequisites
-
-1. **Claude Code CLI** (required)
-   ```bash
-   npm install -g @anthropic-ai/claude-code
-   ```
-
-2. **Environment** (optional - for database services)
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
+That's it. Monty will ask you what to build and start coding.
 
 ---
 
