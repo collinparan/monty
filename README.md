@@ -97,58 +97,24 @@ Memory persists between iterations via:
 
 ## Quick Start
 
-### 1. Create Directory Structure
-
 ```bash
-mkdir -p scripts/monty
-mkdir -p docker/nginx
-mkdir -p docker/chatterbox  # if using self-hosted TTS
-mkdir -p frontend/css frontend/js  # if using chatbot UI
+./start.sh
 ```
 
-### 2. Copy Monty Files
+That's it. Monty will ask you what to build.
 
-Place these in `scripts/monty/`:
-- `monty.sh`
-- `prompt.md`
-- `prd.json`
-- `progress.txt`
+### Prerequisites
 
-### 3. Make Executable
+1. **Claude Code CLI** (required)
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   ```
 
-```bash
-chmod +x scripts/monty/monty.sh
-```
-
-### 4. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-```
-
-### 5. Start Infrastructure
-
-```bash
-# Core services (PostgreSQL, Neo4j, Nginx)
-docker-compose -f docker/docker-compose.yml up -d
-
-# With GPU for Chatterbox TTS
-docker-compose -f docker/docker-compose.yml --profile gpu up -d
-```
-
-### 6. Run Monty
-
-```bash
-# Default: 15 iterations with Claude Code
-./scripts/monty/monty.sh
-
-# Custom iterations
-./scripts/monty/monty.sh 25
-
-# Different agent
-MONTY_AGENT=amp ./scripts/monty/monty.sh
-```
+2. **Environment** (optional - for database services)
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
 
 ---
 
