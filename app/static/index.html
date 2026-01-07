@@ -269,6 +269,72 @@
             cursor: pointer;
         }
         .suggestion:hover { background: #c5cae9; }
+        .typing-indicator {
+            color: #888;
+            font-style: italic;
+        }
+        .typing-indicator::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        .tool-call {
+            background: #e8f5e9;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tool-icon {
+            font-size: 14px;
+        }
+        .tool-time {
+            color: #666;
+            font-size: 11px;
+        }
+        .error-text {
+            color: #c62828;
+        }
+        .chat-message code {
+            background: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .chat-message strong {
+            font-weight: 600;
+        }
+        .chat-send:disabled,
+        .chat-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .chat-header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-clear {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        .chat-clear:hover {
+            background: rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
@@ -356,7 +422,10 @@
     <div class="chat-widget" id="chat-widget">
         <div class="chat-header">
             <h3>AI Analytics Assistant</h3>
-            <button class="chat-close" onclick="toggleChat()">&times;</button>
+            <div class="chat-header-actions">
+                <button class="chat-clear" onclick="clearChat()">Clear</button>
+                <button class="chat-close" onclick="toggleChat()">&times;</button>
+            </div>
         </div>
         <div class="chat-messages" id="chat-messages">
             <div class="chat-message assistant">
@@ -624,11 +693,35 @@
         }
 
         // Chat functionality
+        let chatSessionId = null;
+        let isStreaming = false;
+
         function toggleChat() {
             const widget = document.getElementById('chat-widget');
             const toggle = document.getElementById('chat-toggle');
             widget.classList.toggle('open');
             toggle.classList.toggle('hidden');
+
+            // Load example prompts if first time opening
+            if (widget.classList.contains('open') && !window.examplesLoaded) {
+                loadExamplePrompts();
+                window.examplesLoaded = true;
+            }
+        }
+
+        async function loadExamplePrompts() {
+            try {
+                const response = await fetch(`${API_BASE}/agent/examples`);
+                if (response.ok) {
+                    const examples = await response.json();
+                    const suggestionsDiv = document.querySelector('.suggestions');
+                    suggestionsDiv.innerHTML = examples.slice(0, 4).map(e =>
+                        `<button class="suggestion" onclick="sendSuggestion('${escapeHtml(e.prompt)}')">${escapeHtml(e.title)}</button>`
+                    ).join('');
+                }
+            } catch (error) {
+                console.error('Error loading example prompts:', error);
+            }
         }
 
         function sendSuggestion(text) {
@@ -637,38 +730,169 @@
         }
 
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendMessage();
             }
         }
 
         async function sendMessage() {
+            if (isStreaming) return;
+
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             if (!message) return;
 
-            const messages = document.getElementById('chat-messages');
+            const messagesDiv = document.getElementById('chat-messages');
+            const sendBtn = document.querySelector('.chat-send');
 
             // Add user message
-            messages.innerHTML += `<div class="chat-message user">${escapeHtml(message)}</div>`;
+            addChatMessage('user', message);
             input.value = '';
+            input.disabled = true;
+            sendBtn.disabled = true;
+            isStreaming = true;
 
-            // Add thinking indicator
-            messages.innerHTML += `<div class="chat-message assistant" id="thinking">Thinking...</div>`;
-            messages.scrollTop = messages.scrollHeight;
+            // Create assistant message placeholder for streaming
+            const assistantDiv = document.createElement('div');
+            assistantDiv.className = 'chat-message assistant';
+            assistantDiv.id = 'streaming-response';
+            assistantDiv.innerHTML = '<span class="typing-indicator">Thinking...</span>';
+            messagesDiv.appendChild(assistantDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            // TODO: Connect to actual agent API when implemented
-            setTimeout(() => {
-                document.getElementById('thinking').remove();
-                messages.innerHTML += `<div class="chat-message assistant">I'm the AI assistant. The agent API isn't connected yet, but once it is, I'll be able to help you analyze technician data, identify churn risks, and provide insights about recruitment and retention trends.</div>`;
-                messages.scrollTop = messages.scrollHeight;
-            }, 1000);
+            try {
+                // Build URL with query params
+                let url = `${API_BASE}/agent/stream?message=${encodeURIComponent(message)}`;
+                if (chatSessionId) {
+                    url += `&session_id=${encodeURIComponent(chatSessionId)}`;
+                }
+
+                // Use EventSource for SSE
+                const eventSource = new EventSource(url);
+                let responseText = '';
+                let toolsDiv = null;
+
+                eventSource.onmessage = function(event) {
+                    if (event.data === '[DONE]') {
+                        eventSource.close();
+                        finishStreaming();
+                        return;
+                    }
+
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleStreamEvent(data, assistantDiv, responseText, (text) => {
+                            responseText = text;
+                        });
+                    } catch (e) {
+                        console.error('Error parsing SSE event:', e);
+                    }
+                };
+
+                eventSource.onerror = function(error) {
+                    console.error('SSE error:', error);
+                    eventSource.close();
+                    if (responseText === '') {
+                        assistantDiv.innerHTML = '<span class="error-text">Failed to connect to the AI assistant. Please try again.</span>';
+                    }
+                    finishStreaming();
+                };
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                assistantDiv.innerHTML = '<span class="error-text">Failed to send message. Please try again.</span>';
+                finishStreaming();
+            }
+
+            function finishStreaming() {
+                isStreaming = false;
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        function handleStreamEvent(data, assistantDiv, currentText, setText) {
+            switch (data.type) {
+                case 'session':
+                    chatSessionId = data.data.session_id;
+                    break;
+
+                case 'token':
+                    // Remove typing indicator and append token
+                    const typingIndicator = assistantDiv.querySelector('.typing-indicator');
+                    if (typingIndicator) {
+                        assistantDiv.innerHTML = '';
+                    }
+                    currentText += data.data;
+                    setText(currentText);
+                    assistantDiv.innerHTML = formatMarkdown(currentText);
+                    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+                    break;
+
+                case 'tool_call':
+                    // Show tool call indicator
+                    const toolCallDiv = document.createElement('div');
+                    toolCallDiv.className = 'tool-call';
+                    toolCallDiv.innerHTML = `<span class="tool-icon">&#x1F50D;</span> Querying: <strong>${escapeHtml(data.data.tool_name)}</strong>`;
+                    assistantDiv.appendChild(toolCallDiv);
+                    break;
+
+                case 'tool_result':
+                    // Update tool call with result status
+                    const toolCalls = assistantDiv.querySelectorAll('.tool-call');
+                    if (toolCalls.length > 0) {
+                        const lastToolCall = toolCalls[toolCalls.length - 1];
+                        const status = data.data.success ? '&#x2705;' : '&#x274C;';
+                        lastToolCall.innerHTML = `<span class="tool-icon">${status}</span> ${escapeHtml(data.data.tool_name)} <span class="tool-time">(${data.data.execution_time_ms}ms)</span>`;
+                    }
+                    break;
+
+                case 'done':
+                    // Response complete
+                    break;
+
+                case 'error':
+                    assistantDiv.innerHTML = `<span class="error-text">Error: ${escapeHtml(data.data)}</span>`;
+                    break;
+            }
+        }
+
+        function addChatMessage(role, content) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+            messageDiv.innerHTML = role === 'user' ? escapeHtml(content) : formatMarkdown(content);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function formatMarkdown(text) {
+            // Simple markdown formatting
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n/g, '<br>')
+                .replace(/- (.*?)(?=<br>|$)/g, '&bull; $1');
         }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function clearChat() {
+            chatSessionId = null;
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.innerHTML = `
+                <div class="chat-message assistant">
+                    Hi! I can help you analyze technician data. Try asking about churn risk, regional trends, or specific technicians.
+                </div>
+            `;
         }
     </script>
 </body>
