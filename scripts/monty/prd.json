@@ -289,7 +289,7 @@
         "Chat history within session"
       ],
       "priority": 16,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {

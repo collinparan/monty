@@ -141,6 +141,79 @@ READ THIS SECTION FIRST - These patterns have been established for this codebase
 - Background tasks capture dependencies from outer scope (closure)
 - Database is `get_db` not `get_session` in this codebase
 
+### US-009: Embedding Service - COMPLETE
+- Created `app/services/embeddings.py` with `EmbeddingService` class
+- OpenAI text-embedding-3-small (1536 dimensions)
+- Batch embedding support for bulk operations
+- Technician profile text generation from structured data
+- Cosine similarity search implementation
+- 10 tests passing
+
+### US-010: Dashboard API Endpoints - COMPLETE
+- Created `app/routers/dashboard.py` with dashboard endpoints
+- GET /overview for metrics cards
+- GET /forecast for Prophet chart data
+- GET /feature-importance for model explanations
+- GET /regions for regional summary
+- GET /technicians for paginated list with predictions
+- Created `app/schemas/dashboard.py` with Chart.js optimized schemas
+
+### US-011: Dashboard Frontend - COMPLETE
+- Created responsive HTML/CSS/JS dashboard in `app/static/index.html`
+- Chart.js for line and bar charts
+- Placeholder charts when no trained models exist
+- Regional summary table with risk badges
+- Technicians at risk list
+- Chat widget placeholder
+
+### US-012: Tool Definition Framework - COMPLETE
+- Created `app/services/tools.py` with ToolRegistry class
+- ToolDefinition pydantic model with JSON Schema parameters
+- Async tool execution with error handling
+- Schema export for Claude and OpenAI function calling formats
+- @tool decorator for marking functions
+- 16 tests in `tests/test_tools.py`
+
+### US-013: Agent Tools - COMPLETE
+- Created `app/services/agent_tools.py` with 6 technician analytics tools:
+  - query_technicians: search by region, status, risk
+  - get_prediction: retention prediction with explanation
+  - get_forecast: Prophet forecast with confidence intervals
+  - calculate_roi: ROI for retention interventions
+  - get_feature_importance: ranked features from ML models
+  - get_regional_summary: metrics by region
+- Natural language explanation generation
+- 20 tests in `tests/test_agent_tools.py`
+
+### US-014: Agent Loop Implementation - COMPLETE
+- Created `app/services/agent.py` with AgentService class
+- AgentState dataclass for conversation management
+- AgentEvent dataclass with SSE formatting
+- Integration with Claude API (anthropic library)
+- Streaming token-by-token responses
+- Tool execution loop with max iterations
+- Domain-specific system prompt for technician analytics
+- 15 tests with mocked Claude responses
+
+### US-015: Agent Chat Endpoints - COMPLETE
+- Created `app/routers/agent.py` with endpoints:
+  - POST /api/v1/agent/chat - synchronous chat
+  - GET /api/v1/agent/stream - SSE streaming
+  - GET/DELETE /sessions/{id} - session management
+  - GET /examples - suggested prompts
+- Redis session storage with 1hr TTL
+- Example prompts for common queries
+- 18 tests in `tests/test_agent_router.py`
+
+### US-016: Agent Chat UI - COMPLETE
+- Updated `app/static/index.html` with functional chat widget
+- EventSource (SSE) connection to agent stream
+- Real-time token streaming with typing indicator
+- Tool call visualization with status icons
+- Session ID management for conversation continuity
+- Clear chat button, markdown formatting
+- Dynamic example prompts from API
+
 ---
 
 ## Blockers and Notes
