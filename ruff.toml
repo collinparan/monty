@@ -1,0 +1,44 @@
+# Ruff configuration for SHS Technician Analytics Platform
+target-version = "py39"
+line-length = 100
+
+[lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate (commented out code)
+    "RUF",    # Ruff-specific rules
+]
+
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults (needed for FastAPI Depends)
+    "B904",   # raise without from inside except (too noisy)
+    "ARG001", # unused function argument (needed for abstract methods)
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ARG",    # unused arguments in tests are fine
+    "S101",   # assert is fine in tests
+]
+
+[lint.isort]
+known-first-party = ["app"]
+force-single-line = false
+combine-as-imports = true
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

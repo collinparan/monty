@@ -1,0 +1,79 @@
+[project]
+name = "shs-technician-analytics"
+version = "0.1.0"
+description = "Sears Home Services Technician Analytics Platform - Predictive analytics with explainable AI"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Sears Home Services AI Team" }]
+
+dependencies = [
+    # Web Framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.6",
+
+    # Database
+    "sqlalchemy[asyncio]>=2.0.25",
+    "asyncpg>=0.29.0",
+    "pgvector>=0.2.4",
+    "alembic>=1.13.1",
+
+    # Redis
+    "redis>=5.0.1",
+
+    # Snowflake
+    "snowflake-connector-python>=3.6.0",
+    "cryptography>=41.0.0",
+
+    # ML - InterpretML & Prophet
+    "interpret>=0.5.1",
+    "prophet>=1.1.5",
+    "joblib>=1.3.2",
+    "pandas>=2.1.4",
+    "numpy>=1.26.3",
+    "scikit-learn>=1.4.0",
+
+    # AI / LLM
+    "anthropic>=0.18.0",
+    "openai>=1.10.0",
+
+    # Utilities
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "httpx>=0.26.0",
+    "structlog>=24.1.0",
+    "python-json-logger>=2.0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.14",
+    "pyright>=1.1.347",
+    "httpx>=0.26.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.pyright]
+pythonVersion = "3.9"
+typeCheckingMode = "basic"
+include = ["app"]
+exclude = ["**/__pycache__", "venv", ".venv"]
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
