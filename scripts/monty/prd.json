@@ -138,7 +138,7 @@
         "Unit tests with sample time series"
       ],
       "priority": 7,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {

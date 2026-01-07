@@ -45,6 +45,14 @@ ignore = [
     "TC003",  # Path import needed at runtime
     "UP045",  # Optional[] for Python 3.9 compatibility
 ]
+"app/schemas/*.py" = [
+    "TC003",  # datetime, UUID imports needed at runtime for Pydantic
+    "UP045",  # Optional[] for Python 3.9 compatibility
+]
+"app/routers/*.py" = [
+    "TC002",  # redis, AsyncSession needed at runtime for Depends()
+    "UP045",  # Optional[] needed for Python 3.9 FastAPI query params
+]
 
 [lint.isort]
 known-first-party = ["app"]

@@ -104,6 +104,23 @@ READ THIS SECTION FIRST - These patterns have been established for this codebase
 - Python 3.9 needs `Optional[]` instead of `|` union syntax for SQLAlchemy type hints
 - Add ruff.toml per-file ignores for UP045 (Optional instead of |) in models and ML services
 
+### US-007: Prophet Forecasting Service - COMPLETE
+- Created `app/services/ml/prophet_service.py` with `ProphetService` class
+- Train forecast: `train_forecast()` with configurable seasonality
+- Future predictions: `predict_future(periods)` with confidence intervals
+- Components: `get_trend_components()` - trend, yearly, weekly, daily seasonality
+- Convenience methods: `forecast_technician_headcount()`, `forecast_job_demand()`
+- Chart-friendly output: dates, yhat, yhat_lower, yhat_upper
+- Metrics: MAE, MAPE, RMSE for forecast accuracy
+- Model serialization to joblib .sav in /models/prophet/{forecast_type}/{version}.sav
+- 7 tests passing in `tests/test_prophet_service.py`
+
+**Learnings:**
+- Prophet has poor type hints - need `# type: ignore[arg-type]` for seasonality params
+- Use numpy arrays instead of pandas Series for metric calculations (better pyright support)
+- Prophet warnings about divide by zero in matmul are normal (internal calculations)
+- Store model parameter `model` in `_extract_components` kept for API consistency even if unused
+
 ---
 
 ## Blockers and Notes
