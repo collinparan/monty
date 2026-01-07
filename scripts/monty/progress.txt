@@ -121,6 +121,26 @@ READ THIS SECTION FIRST - These patterns have been established for this codebase
 - Prophet warnings about divide by zero in matmul are normal (internal calculations)
 - Store model parameter `model` in `_extract_components` kept for API consistency even if unused
 
+### US-008: Model Training API Endpoints - COMPLETE
+- Created `app/routers/models.py` with model management endpoints
+- Created `app/schemas/models.py` with Pydantic request/response schemas
+- Training endpoints: POST /train/ebm, /train/decision-tree, /train/prophet
+- Training runs as FastAPI background tasks
+- Training status tracked in Redis with 1hr TTL
+- GET /training/{job_id}/status to check progress
+- List endpoints: GET /api/v1/models with filtering by type, is_active
+- GET /{id}/explanations for global feature importance
+- POST /{id}/predict for predictions with local explanations
+- GET /{id}/forecast for Prophet future predictions
+- DELETE /{id} for soft delete (sets is_active=False)
+
+**Learnings:**
+- Python 3.9 requires `Optional[X]` for FastAPI query params, not `X | None`
+- Add `UP045` to ruff ignores for routers (Python 3.9 compatibility)
+- FastAPI evaluates type annotations at runtime, so need actual imports not TYPE_CHECKING
+- Background tasks capture dependencies from outer scope (closure)
+- Database is `get_db` not `get_session` in this codebase
+
 ---
 
 ## Blockers and Notes

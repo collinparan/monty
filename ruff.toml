@@ -45,6 +45,10 @@ ignore = [
     "TC003",  # Path import needed at runtime
     "UP045",  # Optional[] for Python 3.9 compatibility
 ]
+"app/services/embeddings.py" = [
+    "UP045",  # Optional[] for Python 3.9 compatibility
+    "SIM108", # Keep explicit if-else for clarity
+]
 "app/schemas/*.py" = [
     "TC003",  # datetime, UUID imports needed at runtime for Pydantic
     "UP045",  # Optional[] for Python 3.9 compatibility
