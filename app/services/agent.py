@@ -7,7 +7,6 @@ make predictions, and provide insights about technician analytics.
 from __future__ import annotations
 
 import json
-import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any, AsyncGenerator, Optional
@@ -15,9 +14,10 @@ from typing import Any, AsyncGenerator, Optional
 import anthropic
 
 from app.config import get_settings
+from app.logging_config import get_logger, metrics
 from app.services.tools import ToolRegistry, ToolResult
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 settings = get_settings()
 
 
@@ -232,6 +232,8 @@ class AgentService:
         # Get tool schemas for Claude
         tools = self.tool_registry.export_for_llm()
 
+        agent_start_time = time.time()
+
         while state.iteration < state.max_iterations:
             state.iteration += 1
 
@@ -310,6 +312,15 @@ class AgentService:
                             c["text"] for c in collected_content if c["type"] == "text"
                         )
                         state.add_assistant_message(text_content)
+                    total_time_ms = (time.time() - agent_start_time) * 1000
+                    metrics.increment("agent.requests")
+                    metrics.record_timing("agent.total_time_ms", total_time_ms)
+                    logger.info(
+                        "agent_completed",
+                        iterations=state.iteration,
+                        total_time_ms=round(total_time_ms, 2),
+                        tools_called=len(state.tools_called),
+                    )
                     yield AgentEvent(type="done", data={"iterations": state.iteration})
                     return
 
@@ -330,6 +341,26 @@ class AgentService:
 
                     # Execute the tool
                     result = await self.tool_registry.execute(tool_name, tool_input)
+
+                    # Track tool metrics
+                    metrics.increment(f"tool.{tool_name}.calls")
+                    if result.execution_time_ms is not None:
+                        metrics.record_timing(f"tool.{tool_name}.time_ms", result.execution_time_ms)
+
+                    if result.success:
+                        logger.info(
+                            "tool_executed",
+                            tool_name=tool_name,
+                            execution_time_ms=result.execution_time_ms,
+                        )
+                    else:
+                        metrics.increment(f"tool.{tool_name}.errors")
+                        logger.warning(
+                            "tool_failed",
+                            tool_name=tool_name,
+                            error=result.error,
+                            execution_time_ms=result.execution_time_ms,
+                        )
 
                     yield AgentEvent(
                         type="tool_result",

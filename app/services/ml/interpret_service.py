@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -15,8 +16,10 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from sklearn.model_selection import train_test_split
 
 from app.config import get_settings
+from app.logging_config import get_logger, metrics
 
 settings = get_settings()
+logger = get_logger(__name__)
 
 
 class InterpretMLService:
@@ -65,6 +68,14 @@ class InterpretMLService:
             or f"{settings.model_version_prefix}{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         )
 
+        start_time = time.time()
+        logger.info(
+            "ebm_training_started",
+            version=version,
+            n_samples=len(df),
+            n_features=len(feature_columns) if feature_columns else df.shape[1] - 1,
+        )
+
         # Prepare features
         if feature_columns is None:
             feature_columns = [col for col in df.columns if col != target_column]
@@ -84,12 +95,13 @@ class InterpretMLService:
             feature_names=feature_columns,
         )
         ebm.fit(X_train, y_train)
+        training_time_ms = (time.time() - start_time) * 1000
 
         # Evaluate
         y_pred = ebm.predict(X_test)
         y_proba = ebm.predict_proba(X_test)[:, 1]
 
-        metrics = {
+        model_metrics = {
             "accuracy": float(accuracy_score(y_test, y_pred)),
             "precision": float(precision_score(y_test, y_pred, zero_division=0)),  # type: ignore[arg-type]
             "recall": float(recall_score(y_test, y_pred, zero_division=0)),  # type: ignore[arg-type]
@@ -107,6 +119,17 @@ class InterpretMLService:
         model_path = self._get_model_path("ebm", version)
         joblib.dump(ebm, model_path)
 
+        # Log training completion
+        metrics.increment("model.ebm.trainings")
+        metrics.record_timing("model.ebm.training_time_ms", training_time_ms)
+        logger.info(
+            "ebm_training_completed",
+            version=version,
+            training_time_ms=round(training_time_ms, 2),
+            auc_roc=model_metrics["auc_roc"],
+            accuracy=model_metrics["accuracy"],
+        )
+
         return {
             "model_id": str(uuid.uuid4()),
             "name": "EBM Retention Predictor",
@@ -114,14 +137,14 @@ class InterpretMLService:
             "model_type": "EBM",
             "target": target_column,
             "file_path": str(model_path),
-            "metrics": metrics,
+            "metrics": model_metrics,
             "feature_importance": feature_importance,
             "training_config": {
                 "test_size": test_size,
                 "random_state": random_state,
                 "feature_columns": feature_columns,
             },
-            "primary_score": metrics["auc_roc"],
+            "primary_score": model_metrics["auc_roc"],
         }
 
     def train_decision_tree(
@@ -154,6 +177,14 @@ class InterpretMLService:
             or f"{settings.model_version_prefix}{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         )
 
+        start_time = time.time()
+        logger.info(
+            "decision_tree_training_started",
+            version=version,
+            n_samples=len(df),
+            max_depth=max_depth,
+        )
+
         # Prepare features
         if feature_columns is None:
             feature_columns = [col for col in df.columns if col != target_column]
@@ -173,12 +204,13 @@ class InterpretMLService:
             feature_names=feature_columns,
         )
         tree.fit(X_train, y_train)
+        training_time_ms = (time.time() - start_time) * 1000
 
         # Evaluate
         y_pred = tree.predict(X_test)
         y_proba = tree.predict_proba(X_test)[:, 1]  # type: ignore[index]
 
-        metrics = {
+        model_metrics = {
             "accuracy": float(accuracy_score(y_test, y_pred)),
             "precision": float(precision_score(y_test, y_pred, zero_division=0)),  # type: ignore[arg-type]
             "recall": float(recall_score(y_test, y_pred, zero_division=0)),  # type: ignore[arg-type]
@@ -197,6 +229,17 @@ class InterpretMLService:
         model_path = self._get_model_path("decision_tree", version)
         joblib.dump(tree, model_path)
 
+        # Log training completion
+        metrics.increment("model.decision_tree.trainings")
+        metrics.record_timing("model.decision_tree.training_time_ms", training_time_ms)
+        logger.info(
+            "decision_tree_training_completed",
+            version=version,
+            training_time_ms=round(training_time_ms, 2),
+            auc_roc=model_metrics["auc_roc"],
+            accuracy=model_metrics["accuracy"],
+        )
+
         return {
             "model_id": str(uuid.uuid4()),
             "name": "Decision Tree Explainer",
@@ -204,7 +247,7 @@ class InterpretMLService:
             "model_type": "DECISION_TREE",
             "target": target_column,
             "file_path": str(model_path),
-            "metrics": metrics,
+            "metrics": model_metrics,
             "feature_importance": feature_importance,
             "training_config": {
                 "max_depth": max_depth,
@@ -212,7 +255,7 @@ class InterpretMLService:
                 "random_state": random_state,
                 "feature_columns": feature_columns,
             },
-            "primary_score": metrics["auc_roc"],
+            "primary_score": model_metrics["auc_roc"],
         }
 
     def _extract_ebm_importance(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -13,8 +14,10 @@ import pandas as pd
 from prophet import Prophet
 
 from app.config import get_settings
+from app.logging_config import get_logger, metrics
 
 settings = get_settings()
+logger = get_logger(__name__)
 
 
 class ProphetService:
@@ -70,6 +73,15 @@ class ProphetService:
             or f"{settings.model_version_prefix}{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         )
 
+        start_time = time.time()
+        logger.info(
+            "prophet_training_started",
+            version=version,
+            forecast_type=forecast_type,
+            n_samples=len(df),
+            periods=periods,
+        )
+
         # Prepare data for Prophet (requires 'ds' and 'y' columns)
         prophet_df = df[[date_column, value_column]].copy()
         prophet_df.columns = ["ds", "y"]
@@ -83,6 +95,7 @@ class ProphetService:
             interval_width=0.95,  # 95% confidence interval
         )
         model.fit(prophet_df)
+        training_time_ms = (time.time() - start_time) * 1000
 
         # Create future dataframe and predict
         future = model.make_future_dataframe(periods=periods, freq=freq)
@@ -95,11 +108,22 @@ class ProphetService:
         components = self._extract_components(model, forecast)
 
         # Calculate metrics on historical data
-        metrics = self._calculate_metrics(prophet_df, forecast)  # type: ignore[arg-type]
+        model_metrics = self._calculate_metrics(prophet_df, forecast)  # type: ignore[arg-type]
 
         # Save model
         model_path = self._get_model_path(forecast_type, version)
         joblib.dump(model, model_path)
+
+        # Log training completion
+        metrics.increment("model.prophet.trainings")
+        metrics.record_timing("model.prophet.training_time_ms", training_time_ms)
+        logger.info(
+            "prophet_training_completed",
+            version=version,
+            forecast_type=forecast_type,
+            training_time_ms=round(training_time_ms, 2),
+            mape=model_metrics.get("mape"),
+        )
 
         return {
             "model_id": str(uuid.uuid4()),
@@ -108,7 +132,7 @@ class ProphetService:
             "model_type": "PROPHET",
             "forecast_type": forecast_type,
             "file_path": str(model_path),
-            "metrics": metrics,
+            "metrics": model_metrics,
             "forecast": forecast_data,
             "components": components,
             "training_config": {

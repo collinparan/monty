@@ -214,6 +214,34 @@ READ THIS SECTION FIRST - These patterns have been established for this codebase
 - Clear chat button, markdown formatting
 - Dynamic example prompts from API
 
+### US-017: Appliance Recommendation Tools - COMPLETE
+- Created `app/services/appliance_tools.py` with customer-facing tools
+- `get_appliance_assessment`: evaluates appliance condition and risk
+- `calculate_repair_vs_replace`: ROI calculation for repair vs replacement
+- Natural language explanations like "Your 14-year age adds 0.6 to risk score..."
+- Profit margin calculations for company and 1099 partner
+- APPLIANCE_AGENT_PROMPT for customer-facing interactions
+- 25 tests in `tests/test_appliance_tools.py`
+
+### US-019: Observability and Logging - COMPLETE
+- Created `app/logging_config.py` with structlog configuration
+- JSON-formatted logging for production, pretty console for development
+- Request ID propagation via contextvars (set in LoggingMiddleware)
+- `@log_execution_time` decorator for timing functions
+- LoggingMiddleware ASGI middleware for HTTP request logging
+- MetricsTracker class for in-memory counters and timings
+- Integrated logging into:
+  - `app/main.py`: application lifecycle events
+  - `app/services/agent.py`: agent iterations, tool calls, metrics
+  - `app/services/ml/interpret_service.py`: EBM and Decision Tree training
+  - `app/services/ml/prophet_service.py`: Prophet forecast training
+  - `app/services/snowflake.py`: query timing and cache hit/miss stats
+- Key metrics tracked:
+  - `agent.requests`, `agent.total_time_ms`
+  - `tool.{name}.calls`, `tool.{name}.time_ms`, `tool.{name}.errors`
+  - `model.{type}.trainings`, `model.{type}.training_time_ms`
+  - `snowflake.queries`, `snowflake.query_time_ms`, `snowflake.cache.hits/misses`
+
 ---
 
 ## Blockers and Notes

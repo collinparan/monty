@@ -5,15 +5,18 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import time
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import redis.asyncio as redis
 
 from app.config import get_settings
+from app.logging_config import get_logger, metrics
 from app.snowflake import execute_query
 
 settings = get_settings()
+logger = get_logger(__name__)
 
 
 class SnowflakeService:
@@ -62,15 +65,30 @@ class SnowflakeService:
     ) -> list[dict[str, Any]]:
         """Execute a Snowflake query with optional caching."""
         cache_key = self._cache_key(query, params)
+        start_time = time.time()
 
         # Try cache first
         if use_cache:
             cached = await self._get_cached(cache_key)
             if cached is not None:
+                metrics.increment("snowflake.cache.hits")
+                logger.debug("snowflake_cache_hit", cache_key=cache_key[:20])
                 return cached
 
         # Execute query
+        metrics.increment("snowflake.cache.misses")
         result = await execute_query(query, params)
+        query_time_ms = (time.time() - start_time) * 1000
+
+        # Track query metrics
+        metrics.increment("snowflake.queries")
+        metrics.record_timing("snowflake.query_time_ms", query_time_ms)
+        logger.info(
+            "snowflake_query_executed",
+            query_time_ms=round(query_time_ms, 2),
+            result_count=len(result),
+            cached=False,
+        )
 
         # Cache result
         if use_cache and result:

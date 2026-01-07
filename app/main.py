@@ -16,9 +16,14 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database import close_db, engine
+from app.logging_config import LoggingMiddleware, get_logger, setup_logging
 from app.routers import agent_router, dashboard_router, models_router
 
 settings = get_settings()
+
+# Initialize structured logging
+setup_logging()
+logger = get_logger(__name__)
 
 # Redis client (initialized on startup)
 redis_client: redis.Redis | None = None
@@ -30,6 +35,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global redis_client
 
     # Startup
+    logger.info("application_starting", version="0.1.0", env=settings.app_env)
+
     # Initialize Redis
     redis_client = redis.from_url(
         settings.redis_url,
@@ -41,19 +48,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Test Redis connection
     try:
         await redis_client.ping()  # type: ignore[misc]
+        logger.info("redis_connected", url=settings.redis_url.split("@")[-1])
     except Exception as e:
-        print(f"Warning: Redis connection failed: {e}")
+        logger.warning("redis_connection_failed", error=str(e))
 
+    logger.info("application_started")
     yield
 
     # Shutdown
+    logger.info("application_shutting_down")
+
     # Close Redis
     if redis_client:
         await redis_client.close()
+        logger.info("redis_disconnected")
 
     # Close database
     await close_db()
     await engine.dispose()
+    logger.info("database_disconnected")
 
 
 def create_app() -> FastAPI:
@@ -66,6 +79,9 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
+
+    # Logging middleware (must be added first so it wraps all requests)
+    app.add_middleware(LoggingMiddleware)
 
     # CORS middleware
     app.add_middleware(

@@ -305,7 +305,7 @@
         "Unit tests with sample appliance scenarios"
       ],
       "priority": 17,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "high"
     },
     {
@@ -321,7 +321,7 @@
         "Test SSE streaming through Nginx"
       ],
       "priority": 18,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {
@@ -336,7 +336,7 @@
         "Log levels configurable via environment"
       ],
       "priority": 19,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {
