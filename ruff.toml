@@ -49,6 +49,9 @@ ignore = [
     "UP045",  # Optional[] for Python 3.9 compatibility
     "SIM108", # Keep explicit if-else for clarity
 ]
+"app/services/tools.py" = [
+    "UP045",  # Optional[] for Python 3.9 compatibility
+]
 "app/schemas/*.py" = [
     "TC003",  # datetime, UUID imports needed at runtime for Pydantic
     "UP045",  # Optional[] for Python 3.9 compatibility

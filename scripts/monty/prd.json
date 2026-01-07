@@ -189,7 +189,7 @@
         "Integration tests"
       ],
       "priority": 10,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {
@@ -207,7 +207,7 @@
         "Served by FastAPI static files"
       ],
       "priority": 11,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "high"
     },
     {
