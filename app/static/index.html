@@ -4,36 +4,672 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHS Technician Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
+            background: #f0f2f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
             padding: 20px;
-            background: #f5f5f5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+            margin-top: 4px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
-        h1 {
-            color: #333;
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metric-card .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metric-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: #1a237e;
+        }
+        .metric-card .change {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .metric-card .change.positive { color: #2e7d32; }
+        .metric-card .change.negative { color: #c62828; }
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 1024px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
         }
         .card {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .card h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .regions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .regions-table th,
+        .regions-table td {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .regions-table th {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .risk-badge.high { background: #ffebee; color: #c62828; }
+        .risk-badge.medium { background: #fff3e0; color: #e65100; }
+        .risk-badge.low { background: #e8f5e9; color: #2e7d32; }
+        .technicians-list {
+            margin-top: 20px;
+        }
+        .tech-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .tech-item:last-child { border-bottom: none; }
+        .tech-info {
+            flex: 1;
+        }
+        .tech-info .name {
+            font-weight: 500;
+            color: #333;
+        }
+        .tech-info .details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 380px;
+            max-height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        .chat-widget.open { display: flex; }
+        .chat-header {
+            background: #1a237e;
+            color: white;
+            padding: 16px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            max-height: 300px;
+        }
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            max-width: 85%;
+        }
+        .chat-message.user {
+            background: #e3f2fd;
+            margin-left: auto;
+        }
+        .chat-message.assistant {
+            background: #f5f5f5;
+        }
+        .chat-input-area {
+            padding: 12px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .chat-input:focus {
+            outline: none;
+            border-color: #1a237e;
+        }
+        .chat-send {
+            padding: 10px 16px;
+            background: #1a237e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .chat-send:hover { background: #283593; }
+        .chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #1a237e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 24px;
+            z-index: 999;
+        }
+        .chat-toggle:hover { background: #283593; }
+        .chat-toggle.hidden { display: none; }
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 16px 12px;
+        }
+        .suggestion {
+            padding: 6px 12px;
+            background: #e8eaf6;
+            border: none;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #3949ab;
+            cursor: pointer;
+        }
+        .suggestion:hover { background: #c5cae9; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
         <h1>Sears Home Services</h1>
-        <h2>Technician Analytics Dashboard</h2>
+        <p>Technician Recruitment & Retention Analytics</p>
+    </div>
+
+    <div class="container">
+        <!-- Metrics Row -->
+        <div class="metrics-row" id="metrics-row">
+            <div class="metric-card">
+                <div class="label">Total Technicians</div>
+                <div class="value" id="total-technicians">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Active</div>
+                <div class="value" id="active-technicians">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Churn Rate</div>
+                <div class="value" id="churn-rate">--%</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">High Risk</div>
+                <div class="value" id="high-risk">--</div>
+                <div class="change negative">Needs attention</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Avg Tenure</div>
+                <div class="value" id="avg-tenure">-- days</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+            <div class="card">
+                <h2>Technician Headcount Forecast</h2>
+                <div class="chart-container">
+                    <canvas id="forecast-chart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Risk Factors</h2>
+                <div class="chart-container">
+                    <canvas id="importance-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regions Table -->
         <div class="card">
-            <p>Dashboard coming soon. API is available at <a href="/docs">/docs</a></p>
+            <h2>Regional Summary</h2>
+            <table class="regions-table">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>Technicians</th>
+                        <th>Active</th>
+                        <th>Churned</th>
+                        <th>Risk Level</th>
+                        <th>Avg Tenure</th>
+                    </tr>
+                </thead>
+                <tbody id="regions-tbody">
+                    <tr><td colspan="6" class="loading">Loading regions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Technicians List -->
+        <div class="card technicians-list">
+            <h2>Technicians at Risk</h2>
+            <div id="technicians-list">
+                <div class="loading">Loading technicians...</div>
+            </div>
         </div>
     </div>
+
+    <!-- Chat Widget -->
+    <button class="chat-toggle" id="chat-toggle" onclick="toggleChat()">
+        <span>?</span>
+    </button>
+
+    <div class="chat-widget" id="chat-widget">
+        <div class="chat-header">
+            <h3>AI Analytics Assistant</h3>
+            <button class="chat-close" onclick="toggleChat()">&times;</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-message assistant">
+                Hi! I can help you analyze technician data. Try asking about churn risk, regional trends, or specific technicians.
+            </div>
+        </div>
+        <div class="suggestions">
+            <button class="suggestion" onclick="sendSuggestion('Which regions have the highest churn?')">High churn regions</button>
+            <button class="suggestion" onclick="sendSuggestion('What factors increase retention?')">Retention factors</button>
+            <button class="suggestion" onclick="sendSuggestion('Forecast for next quarter')">Q1 Forecast</button>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about technician analytics..." onkeypress="handleKeyPress(event)">
+            <button class="chat-send" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let forecastChart = null;
+        let importanceChart = null;
+
+        // Load dashboard data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOverview();
+            loadForecast();
+            loadFeatureImportance();
+            loadRegions();
+            loadTechnicians();
+        });
+
+        async function loadOverview() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/overview`);
+                if (!response.ok) throw new Error('Failed to load overview');
+                const data = await response.json();
+
+                document.getElementById('total-technicians').textContent = data.total_technicians.toLocaleString();
+                document.getElementById('active-technicians').textContent = data.active_technicians.toLocaleString();
+                document.getElementById('churn-rate').textContent = (data.churn_rate * 100).toFixed(1) + '%';
+                document.getElementById('high-risk').textContent = data.high_risk_count.toLocaleString();
+                document.getElementById('avg-tenure').textContent = Math.round(data.avg_tenure_days) + ' days';
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+
+        async function loadForecast() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/forecast?forecast_type=headcount&periods=90`);
+                if (!response.ok) {
+                    // If no model exists, show placeholder
+                    showPlaceholderForecast();
+                    return;
+                }
+                const data = await response.json();
+
+                const ctx = document.getElementById('forecast-chart').getContext('2d');
+                if (forecastChart) forecastChart.destroy();
+
+                forecastChart = new Chart(ctx, {
+                    type: 'line',
+                    data: data.chart_data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: { display: true, text: 'Date' }
+                            },
+                            y: {
+                                display: true,
+                                title: { display: true, text: 'Technician Count' }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading forecast:', error);
+                showPlaceholderForecast();
+            }
+        }
+
+        function showPlaceholderForecast() {
+            const ctx = document.getElementById('forecast-chart').getContext('2d');
+            if (forecastChart) forecastChart.destroy();
+
+            // Generate sample forecast data
+            const labels = [];
+            const data = [];
+            const upper = [];
+            const lower = [];
+            const today = new Date();
+
+            for (let i = 0; i < 90; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() + i);
+                labels.push(date.toISOString().split('T')[0]);
+                const base = 150 + Math.sin(i / 30) * 20 + i * 0.3;
+                data.push(base);
+                upper.push(base + 15);
+                lower.push(base - 15);
+            }
+
+            forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Forecast (Demo)',
+                            data: data,
+                            borderColor: 'rgb(75, 192, 192)',
+                            fill: false
+                        },
+                        {
+                            label: 'Upper Bound',
+                            data: upper,
+                            borderColor: 'rgba(75, 192, 192, 0.3)',
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: 'Lower Bound',
+                            data: lower,
+                            borderColor: 'rgba(75, 192, 192, 0.3)',
+                            borderDash: [5, 5],
+                            fill: '-1',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Train a Prophet model to see real forecasts' }
+                    }
+                }
+            });
+        }
+
+        async function loadFeatureImportance() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/feature-importance?model_type=EBM`);
+                if (!response.ok) {
+                    showPlaceholderImportance();
+                    return;
+                }
+                const data = await response.json();
+
+                const ctx = document.getElementById('importance-chart').getContext('2d');
+                if (importanceChart) importanceChart.destroy();
+
+                importanceChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: data.chart_data,
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading feature importance:', error);
+                showPlaceholderImportance();
+            }
+        }
+
+        function showPlaceholderImportance() {
+            const ctx = document.getElementById('importance-chart').getContext('2d');
+            if (importanceChart) importanceChart.destroy();
+
+            importanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tenure Days', 'Avg Rating', 'Jobs/Week', 'Completion Rate', 'Competition'],
+                    datasets: [{
+                        label: 'Feature Importance (Demo)',
+                        data: [0.35, 0.25, 0.18, 0.12, 0.10],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Train an EBM model to see real importance' }
+                    }
+                }
+            });
+        }
+
+        async function loadRegions() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/regions`);
+                if (!response.ok) throw new Error('Failed to load regions');
+                const data = await response.json();
+
+                const tbody = document.getElementById('regions-tbody');
+
+                if (data.regions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">No region data available. Add technicians to see regional analytics.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.regions.map(r => `
+                    <tr>
+                        <td><strong>${r.region}</strong></td>
+                        <td>${r.technician_count}</td>
+                        <td>${r.active_count}</td>
+                        <td>${r.churned_count}</td>
+                        <td><span class="risk-badge ${r.risk_level.toLowerCase()}">${r.risk_level}</span></td>
+                        <td>${r.avg_tenure_days ? Math.round(r.avg_tenure_days) + ' days' : '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading regions:', error);
+                document.getElementById('regions-tbody').innerHTML = '<tr><td colspan="6" class="loading">No region data available yet.</td></tr>';
+            }
+        }
+
+        async function loadTechnicians() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/technicians?page=1&page_size=10`);
+                if (!response.ok) throw new Error('Failed to load technicians');
+                const data = await response.json();
+
+                const container = document.getElementById('technicians-list');
+
+                if (data.technicians.length === 0) {
+                    container.innerHTML = '<div class="loading">No technicians found. Add technician data to see this list.</div>';
+                    return;
+                }
+
+                container.innerHTML = data.technicians.map(t => `
+                    <div class="tech-item">
+                        <div class="tech-info">
+                            <div class="name">${t.external_id}</div>
+                            <div class="details">${t.region} | ${t.tenure_days || 0} days tenure | ${t.status}</div>
+                        </div>
+                        <span class="risk-badge ${(t.risk_level || 'low').toLowerCase()}">${t.risk_level || 'N/A'}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading technicians:', error);
+                document.getElementById('technicians-list').innerHTML = '<div class="loading">No technician data available yet.</div>';
+            }
+        }
+
+        // Chat functionality
+        function toggleChat() {
+            const widget = document.getElementById('chat-widget');
+            const toggle = document.getElementById('chat-toggle');
+            widget.classList.toggle('open');
+            toggle.classList.toggle('hidden');
+        }
+
+        function sendSuggestion(text) {
+            document.getElementById('chat-input').value = text;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messages = document.getElementById('chat-messages');
+
+            // Add user message
+            messages.innerHTML += `<div class="chat-message user">${escapeHtml(message)}</div>`;
+            input.value = '';
+
+            // Add thinking indicator
+            messages.innerHTML += `<div class="chat-message assistant" id="thinking">Thinking...</div>`;
+            messages.scrollTop = messages.scrollHeight;
+
+            // TODO: Connect to actual agent API when implemented
+            setTimeout(() => {
+                document.getElementById('thinking').remove();
+                messages.innerHTML += `<div class="chat-message assistant">I'm the AI assistant. The agent API isn't connected yet, but once it is, I'll be able to help you analyze technician data, identify churn risks, and provide insights about recruitment and retention trends.</div>`;
+                messages.scrollTop = messages.scrollHeight;
+            }, 1000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
 </body>
 </html>
