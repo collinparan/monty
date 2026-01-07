@@ -171,7 +171,7 @@
         "Unit tests with mocked API responses"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {

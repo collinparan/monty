@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database import close_db, engine
-from app.routers import models_router
+from app.routers import dashboard_router, models_router
 
 settings = get_settings()
 
@@ -81,6 +81,7 @@ def create_app() -> FastAPI:
 
     # Include API routers
     app.include_router(models_router)
+    app.include_router(dashboard_router)
 
     # Health check endpoint
     @app.get("/health", tags=["Health"])
