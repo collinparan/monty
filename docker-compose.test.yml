@@ -1,0 +1,77 @@
+version: '3.9'
+
+# Test services configuration for CI/CD pipeline
+# Usage: docker-compose -f docker-compose.test.yml up -d
+#        pytest tests/integration/
+
+services:
+  # PostgreSQL with PGVector for test database
+  postgres-test:
+    image: pgvector/pgvector:pg15
+    container_name: shs-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shs_test
+    ports:
+      - "5433:5432"  # Use different port to avoid conflicts
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Redis for test caching and session management
+  redis-test:
+    image: redis:7-alpine
+    container_name: shs-redis-test
+    ports:
+      - "6380:6379"  # Use different port to avoid conflicts
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-test-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test runner container (optional - for CI)
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shs-test-runner
+    environment:
+      - TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres-test:5432/shs_test
+      - TEST_REDIS_URL=redis://redis-test:6379/1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude venv from bind mount
+    working_dir: /app
+    command: ["pytest", "tests/integration/", "-v", "--tb=short"]
+    networks:
+      - test-network
+    profiles:
+      - ci  # Only run with --profile ci
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  postgres-test-data:
+  redis-test-data:

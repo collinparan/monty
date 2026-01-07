@@ -353,7 +353,7 @@
         "All tests pass with `pytest tests/integration/`"
       ],
       "priority": 20,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "high"
     }
   ]

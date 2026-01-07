@@ -242,12 +242,47 @@ READ THIS SECTION FIRST - These patterns have been established for this codebase
   - `model.{type}.trainings`, `model.{type}.training_time_ms`
   - `snowflake.queries`, `snowflake.query_time_ms`, `snowflake.cache.hits/misses`
 
+### US-020: End-to-End Integration Tests - COMPLETE
+- Created `tests/integration/` directory structure
+- `tests/integration/conftest.py` with fixtures:
+  - Test database (PostgreSQL + PGVector) setup
+  - Redis client with mock fallback
+  - Mock Snowflake data generators
+  - FastAPI test client with dependency overrides
+  - Sample training data fixtures
+- `tests/integration/test_e2e_training.py`:
+  - E2E test: EBM training flow with predictions
+  - E2E test: Decision Tree training and explanations
+  - E2E test: Prophet forecasting with future predictions
+  - Tests for local/global explanation generation
+  - Training API endpoint tests
+- `tests/integration/test_e2e_dashboard.py`:
+  - Dashboard overview endpoint tests
+  - Forecast chart data validation (Chart.js compatible)
+  - Feature importance chart data tests
+  - Regional summary tests
+  - Technician list with pagination and filters
+  - Error handling tests
+- `tests/integration/test_e2e_agent.py`:
+  - Agent chat endpoint tests
+  - SSE streaming endpoint tests
+  - Tool registry and execution tests
+  - Agent with mocked LLM responses
+  - Session management tests
+  - Example prompts endpoint tests
+  - Error handling tests
+- `docker-compose.test.yml` for CI-ready test services:
+  - PostgreSQL with PGVector on port 5433
+  - Redis on port 6380
+  - Optional test runner container with `--profile ci`
+
 ---
 
 ## Blockers and Notes
 
 - Snowflake private key file (sf_rsa_key.p8) must be provided separately - NOT in git
 - Need to discover actual table schemas in Snowflake DATA_SOURCES schema
+- Python 3.13 incompatible with interpret package - use Docker or Python 3.9-3.11 for testing
 
 ---
 
