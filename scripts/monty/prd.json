@@ -103,7 +103,7 @@
         "Unit tests for model creation"
       ],
       "priority": 5,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "medium"
     },
     {

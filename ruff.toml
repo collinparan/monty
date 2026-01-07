@@ -36,6 +36,11 @@ ignore = [
     "TC003",  # type-checking imports in alembic
     "UP007",  # Union types in alembic (template-generated)
 ]
+"app/models/*.py" = [
+    "ERA001", # allow commented JSON structure documentation
+    "TC003",  # uuid import needed at runtime for ForeignKey
+    "UP045",  # Optional[] needed for SQLAlchemy on Python 3.9
+]
 
 [lint.isort]
 known-first-party = ["app"]

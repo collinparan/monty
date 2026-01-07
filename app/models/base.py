@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any
+from datetime import datetime
+from typing import Any
 
 from sqlalchemy import DateTime, func
-
-if TYPE_CHECKING:
-    from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
