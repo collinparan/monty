@@ -31,6 +31,11 @@ ignore = [
     "ARG",    # unused arguments in tests are fine
     "S101",   # assert is fine in tests
 ]
+"alembic/**/*.py" = [
+    "TC002",  # type-checking imports in alembic
+    "TC003",  # type-checking imports in alembic
+    "UP007",  # Union types in alembic (template-generated)
+]
 
 [lint.isort]
 known-first-party = ["app"]
