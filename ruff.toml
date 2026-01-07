@@ -41,6 +41,10 @@ ignore = [
     "TC003",  # uuid import needed at runtime for ForeignKey
     "UP045",  # Optional[] needed for SQLAlchemy on Python 3.9
 ]
+"app/services/ml/*.py" = [
+    "TC003",  # Path import needed at runtime
+    "UP045",  # Optional[] for Python 3.9 compatibility
+]
 
 [lint.isort]
 known-first-party = ["app"]
