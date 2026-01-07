@@ -86,7 +86,23 @@ READ THIS SECTION FIRST - These patterns have been established for this codebase
 
 ## Story Progress
 
-(Completed stories will be logged here with learnings)
+### US-006: InterpretML Training Service - COMPLETE
+- Created `app/services/ml/interpret_service.py` with `InterpretMLService` class
+- EBM training: `train_ebm()` with ExplainableBoostingClassifier
+- Decision Tree training: `train_decision_tree()` with ClassificationTree
+- Global explanations: `get_global_explanations()` - feature importance from explain_global()
+- Local explanations: `get_local_explanation()` - per-prediction with explain_local()
+- Natural language generation: `_generate_natural_language_explanation()` - human-readable risk explanations
+- Batch predictions: `predict_batch()` with risk classification (LOW/MEDIUM/HIGH)
+- Model serialization to joblib .sav files in /models/{model_type}/{version}/
+- 5 tests passing in `tests/test_interpret_service.py`
+
+**Learnings:**
+- InterpretML ClassificationTree has different explain_global() data structure than EBM
+- Use hasattr() fallback for feature_importances_ if names/scores not in exp_data
+- Need `# type: ignore[arg-type]` for sklearn's zero_division parameter
+- Python 3.9 needs `Optional[]` instead of `|` union syntax for SQLAlchemy type hints
+- Add ruff.toml per-file ignores for UP045 (Optional instead of |) in models and ML services
 
 ---
 
