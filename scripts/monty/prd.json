@@ -239,7 +239,7 @@
         "Unit tests for each tool"
       ],
       "priority": 13,
-      "status": "pending",
+      "status": "complete",
       "estimatedComplexity": "high"
     },
     {

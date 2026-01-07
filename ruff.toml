@@ -55,6 +55,11 @@ ignore = [
 "app/services/agent_tools.py" = [
     "UP045",  # Optional[] for Python 3.9 compatibility
 ]
+"app/services/agent.py" = [
+    "UP035",  # typing.AsyncGenerator for Python 3.9 compatibility
+    "UP045",  # Optional[] for Python 3.9 compatibility
+    "SIM102", # Keep nested if for clarity with streaming events
+]
 "app/schemas/*.py" = [
     "TC003",  # datetime, UUID imports needed at runtime for Pydantic
     "UP045",  # Optional[] for Python 3.9 compatibility
