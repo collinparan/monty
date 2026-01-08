@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
-from app.main import get_redis
+from app.dependencies import get_redis
 from app.services.agent import AgentEvent, AgentState, create_agent_service
 from app.services.agent_tools import create_technician_analytics_tools
 

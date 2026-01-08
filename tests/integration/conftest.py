@@ -23,7 +23,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.database import Base, get_db
-from app.main import app, get_redis
+from app.main import app
+from app.dependencies import get_redis
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator

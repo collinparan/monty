@@ -16,8 +16,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database import close_db, engine
+from app.dependencies import get_redis, set_redis_client
 from app.logging_config import LoggingMiddleware, get_logger, setup_logging
-from app.routers import agent_router, dashboard_router, models_router
 
 settings = get_settings()
 
@@ -25,15 +25,10 @@ settings = get_settings()
 setup_logging()
 logger = get_logger(__name__)
 
-# Redis client (initialized on startup)
-redis_client: redis.Redis | None = None
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup and shutdown."""
-    global redis_client
-
     # Startup
     logger.info("application_starting", version="0.1.0", env=settings.app_env)
 
@@ -44,6 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         decode_responses=True,
         max_connections=settings.redis_max_connections,
     )
+    set_redis_client(redis_client)
 
     # Test Redis connection
     try:
@@ -59,9 +55,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("application_shutting_down")
 
     # Close Redis
-    if redis_client:
+    try:
+        redis_client = get_redis()
         await redis_client.close()
         logger.info("redis_disconnected")
+    except RuntimeError:
+        pass
 
     # Close database
     await close_db()
@@ -71,6 +70,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+    # Import routers inside function to avoid circular imports
+    from app.routers.agent import router as agent_router
+    from app.routers.dashboard import router as dashboard_router
+    from app.routers.models import router as models_router
+
     app = FastAPI(
         title="SHS Technician Analytics",
         description="Sears Home Services Technician Recruitment & Retention Analytics Platform",
@@ -111,14 +115,14 @@ def create_app() -> FastAPI:
         }
 
         # Check Redis
-        if redis_client:
-            try:
-                await redis_client.ping()  # type: ignore[misc]
-                checks["redis"] = "connected"
-            except Exception:
-                checks["redis"] = "disconnected"
-        else:
+        try:
+            redis_client = get_redis()
+            await redis_client.ping()  # type: ignore[misc]
+            checks["redis"] = "connected"
+        except RuntimeError:
             checks["redis"] = "not initialized"
+        except Exception:
+            checks["redis"] = "disconnected"
 
         return JSONResponse(content=checks)
 
@@ -135,10 +139,3 @@ def create_app() -> FastAPI:
 
 # Create app instance
 app = create_app()
-
-
-def get_redis() -> redis.Redis:
-    """Get Redis client dependency."""
-    if redis_client is None:
-        raise RuntimeError("Redis client not initialized")
-    return redis_client

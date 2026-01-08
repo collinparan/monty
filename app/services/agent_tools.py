@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from app.models import Technician, TrainedModel
 from app.schemas.models import ModelType
 from app.services.ml import InterpretMLService, ProphetService
+from app.services.recommendations import recommendation_engine
 from app.services.tools import ToolRegistry, create_json_schema
 
 logger = logging.getLogger(__name__)
@@ -216,6 +217,36 @@ def create_technician_analytics_tools(
             required=[],
         ),
         handler=_create_get_regional_summary_handler(db_session_factory),
+    )
+
+    registry.register(
+        name="get_strategic_recommendations",
+        description=(
+            "Get AI-powered strategic recommendations for improving 1099 technician "
+            "efficiency, job completion rates, and repair vs replace decisions. "
+            "Uses Cicero-inspired strategic reasoning that models technician intent "
+            "and provides mutually beneficial recommendations grounded in actual data. "
+            "Returns prioritized recommendations with predicted impact, rationale, "
+            "and action items."
+        ),
+        parameters=create_json_schema(
+            properties={
+                "state": {
+                    "type": "string",
+                    "description": "US state abbreviation to filter recommendations (e.g., 'CA', 'TX'). Omit for all states.",
+                },
+                "focus_areas": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["efficiency", "quality", "scheduling", "skill", "routing", "csat", "financial"],
+                    },
+                    "description": "Specific areas to focus recommendations on",
+                },
+            },
+            required=[],
+        ),
+        handler=_create_get_recommendations_handler(),
     )
 
     return registry
@@ -786,3 +817,118 @@ def _generate_regional_insight(summaries: list[dict]) -> str:
         parts.append(f"Best performing regions: {', '.join(healthy[:3])}")
 
     return ". ".join(parts) if parts else "All regions performing within normal parameters."
+
+
+def _create_get_recommendations_handler():
+    """Create handler for get_strategic_recommendations tool."""
+
+    async def get_strategic_recommendations(
+        state: Optional[str] = None,
+        focus_areas: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
+        """Get strategic recommendations using Cicero-inspired engine."""
+        import httpx
+
+        # Call the recommendations API endpoint
+        try:
+            async with httpx.AsyncClient() as client:
+                url = "http://localhost:8000/api/v1/dashboard/recommendations"
+                params = {}
+                if state:
+                    params["state"] = state
+
+                response = await client.get(url, params=params, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+
+                # Format for agent consumption
+                recommendations = data.get("recommendations", [])
+
+                # Filter by focus areas if specified
+                if focus_areas:
+                    recommendations = [
+                        r for r in recommendations
+                        if r.get("type") in focus_areas
+                    ]
+
+                # Build agent-friendly response
+                result = {
+                    "state": state or "all",
+                    "context": {
+                        "total_jobs": data.get("context", {}).get("total_jobs", 0),
+                        "completion_rate": data.get("context", {}).get("completion_rate", 0),
+                        "avg_profit_per_job": data.get("context", {}).get("avg_profit_per_job", 0),
+                        "trend": data.get("context", {}).get("trend_direction", "stable"),
+                    },
+                    "intent": {
+                        "primary_goal": data.get("intent", {}).get("primary_goal", "maximize_earnings"),
+                        "description": _get_intent_description(data.get("intent", {})),
+                    },
+                    "recommendation_count": len(recommendations),
+                    "recommendations": [
+                        {
+                            "priority": r.get("priority", "medium"),
+                            "type": r.get("type", "general"),
+                            "title": r.get("title", ""),
+                            "description": r.get("description", ""),
+                            "rationale": r.get("rationale", ""),
+                            "confidence": r.get("confidence", 0),
+                            "predicted_impact": r.get("predicted_impact", {}),
+                            "technician_benefit": r.get("technician_benefit", ""),
+                            "company_benefit": r.get("company_benefit", ""),
+                            "actions": r.get("actions", []),
+                        }
+                        for r in recommendations
+                    ],
+                    "summary": _generate_recommendations_summary(recommendations),
+                }
+
+                return result
+
+        except httpx.HTTPError as e:
+            logger.error(f"Failed to fetch recommendations: {e}")
+            return {
+                "error": f"Failed to fetch recommendations: {str(e)}",
+                "state": state,
+            }
+        except Exception as e:
+            logger.exception(f"Unexpected error in recommendations: {e}")
+            return {
+                "error": f"Unexpected error: {str(e)}",
+                "state": state,
+            }
+
+    return get_strategic_recommendations
+
+
+def _get_intent_description(intent: dict) -> str:
+    """Get human-readable description of predicted intent."""
+    goal = intent.get("primary_goal", "maximize_earnings")
+    descriptions = {
+        "maximize_earnings": "Technicians are primarily focused on maximizing their earnings.",
+        "efficiency": "Technicians prioritize completing jobs efficiently.",
+        "skill_growth": "Technicians are interested in developing new skills.",
+        "work_life_balance": "Technicians value work-life balance.",
+    }
+    return descriptions.get(goal, "Analyzing technician intent...")
+
+
+def _generate_recommendations_summary(recommendations: list[dict]) -> str:
+    """Generate a summary of recommendations for the agent."""
+    if not recommendations:
+        return "No recommendations at this time. Operations appear healthy."
+
+    critical = [r for r in recommendations if r.get("priority") == "critical"]
+    high = [r for r in recommendations if r.get("priority") == "high"]
+
+    parts = []
+    if critical:
+        parts.append(f"{len(critical)} critical recommendation(s) requiring immediate action")
+    if high:
+        parts.append(f"{len(high)} high-priority recommendation(s)")
+
+    total = len(recommendations)
+    if not parts:
+        parts.append(f"{total} recommendation(s) for optimization")
+
+    return ". ".join(parts) + "."

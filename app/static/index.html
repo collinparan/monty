@@ -340,28 +340,27 @@
 <body>
     <div class="header">
         <h1>Sears Home Services</h1>
-        <p>Technician Recruitment & Retention Analytics</p>
+        <p>1099 Contractor Performance Dashboard</p>
     </div>
 
     <div class="container">
         <!-- Metrics Row -->
         <div class="metrics-row" id="metrics-row">
             <div class="metric-card">
-                <div class="label">Total Technicians</div>
+                <div class="label">Total Vendors</div>
                 <div class="value" id="total-technicians">--</div>
             </div>
             <div class="metric-card">
-                <div class="label">Active</div>
+                <div class="label">Active Vendors</div>
                 <div class="value" id="active-technicians">--</div>
             </div>
             <div class="metric-card">
-                <div class="label">Churn Rate</div>
-                <div class="value" id="churn-rate">--%</div>
+                <div class="label">New Vendors</div>
+                <div class="value" id="churn-rate">--</div>
             </div>
             <div class="metric-card">
-                <div class="label">High Risk</div>
+                <div class="label">Regions</div>
                 <div class="value" id="high-risk">--</div>
-                <div class="change negative">Needs attention</div>
             </div>
             <div class="metric-card">
                 <div class="label">Avg Tenure</div>
@@ -369,18 +368,119 @@
             </div>
         </div>
 
-        <!-- Charts Row -->
-        <div class="charts-row">
+        <!-- State Trends Chart - Full Width -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>Jobs by State Over Time <span id="selected-state-label" style="color: #1a237e; font-weight: normal;"></span></h2>
+                <div>
+                    <button id="back-to-all-states" onclick="backToAllStates()" style="padding: 6px 12px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; margin-right: 8px; display: none;">Back to All States</button>
+                    <span style="font-size: 12px; color: #666;">Click a state line to see forecast</span>
+                </div>
+            </div>
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="state-trends-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Trend Decomposition Row (shown when state selected) -->
+        <div id="state-decomposition-row" class="charts-row" style="display: none;">
             <div class="card">
-                <h2>Technician Headcount Forecast</h2>
+                <h2>Trend Component <span id="trend-state-label" style="color: #1a237e;"></span></h2>
                 <div class="chart-container">
-                    <canvas id="forecast-chart"></canvas>
+                    <canvas id="trend-chart"></canvas>
                 </div>
             </div>
             <div class="card">
-                <h2>Risk Factors</h2>
+                <h2>Weekly Seasonality <span id="seasonality-state-label" style="color: #1a237e;"></span></h2>
                 <div class="chart-container">
-                    <canvas id="importance-chart"></canvas>
+                    <canvas id="seasonality-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forecast Metrics Row (shown when state selected) -->
+        <div id="forecast-metrics-row" class="charts-row" style="display: none;">
+            <div class="card">
+                <h2>Forecast Accuracy <span id="metrics-state-label" style="color: #1a237e;"></span></h2>
+                <div id="forecast-metrics" style="padding: 20px;">
+                    <p style="color: #666;">Click a state to see forecast metrics</p>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Jobs by Region</h2>
+                <div class="chart-container">
+                    <canvas id="region-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendors Chart Row -->
+        <div class="charts-row">
+            <div class="card">
+                <h2>Top Vendors by Jobs</h2>
+                <div class="chart-container">
+                    <canvas id="vendors-chart"></canvas>
+                </div>
+            </div>
+            <div class="card" id="region-chart-standalone">
+                <h2>Jobs by Region</h2>
+                <div class="chart-container">
+                    <canvas id="region-chart-2"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategic Recommendations Section (Cicero-inspired) -->
+        <div class="card" style="margin-bottom: 20px; border-left: 4px solid #1a237e;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 20px;">&#x1F3AF;</span>
+                        Strategic Recommendations
+                        <span id="rec-state-badge" style="font-size: 12px; background: #e3f2fd; color: #1a237e; padding: 2px 8px; border-radius: 12px; display: none;"></span>
+                    </h2>
+                    <p style="font-size: 12px; color: #666; margin-top: 4px;">
+                        AI-powered recommendations grounded in your data
+                        <a href="https://ai.meta.com/research/cicero/" target="_blank" style="color: #1a237e;">(Cicero-inspired)</a>
+                    </p>
+                </div>
+                <button id="refresh-recommendations" onclick="loadRecommendations()" style="padding: 8px 16px; background: #1a237e; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Refresh
+                </button>
+            </div>
+
+            <!-- Context Summary -->
+            <div id="recommendation-context" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; padding: 16px; background: #f5f7fa; border-radius: 8px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 20px; font-weight: bold; color: #1a237e;" id="ctx-total-jobs">--</div>
+                    <div style="font-size: 11px; color: #666;">Jobs (90d)</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 20px; font-weight: bold; color: #1a237e;" id="ctx-completion-rate">--%</div>
+                    <div style="font-size: 11px; color: #666;">Completion Rate</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 20px; font-weight: bold; color: #1a237e;" id="ctx-avg-profit">$--</div>
+                    <div style="font-size: 11px; color: #666;">Avg Profit/Job</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 20px; font-weight: bold; color: #1a237e;" id="ctx-trend">--</div>
+                    <div style="font-size: 11px; color: #666;">Trend</div>
+                </div>
+            </div>
+
+            <!-- Intent Model -->
+            <div id="intent-model" style="margin-bottom: 20px; padding: 12px; background: #fff8e1; border-radius: 8px; display: none;">
+                <div style="font-size: 12px; font-weight: 600; color: #f57c00; margin-bottom: 8px;">
+                    &#x1F9E0; Predicted Technician Intent
+                </div>
+                <div style="font-size: 13px; color: #333;" id="intent-description"></div>
+            </div>
+
+            <!-- Recommendations List -->
+            <div id="recommendations-list" style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    Loading strategic recommendations...
                 </div>
             </div>
         </div>
@@ -392,10 +492,10 @@
                 <thead>
                     <tr>
                         <th>Region</th>
-                        <th>Technicians</th>
+                        <th>Vendors</th>
                         <th>Active</th>
-                        <th>Churned</th>
-                        <th>Risk Level</th>
+                        <th>New</th>
+                        <th>Status</th>
                         <th>Avg Tenure</th>
                     </tr>
                 </thead>
@@ -405,11 +505,11 @@
             </table>
         </div>
 
-        <!-- Technicians List -->
+        <!-- Vendors List -->
         <div class="card technicians-list">
-            <h2>Technicians at Risk</h2>
+            <h2>Top Performing Vendors</h2>
             <div id="technicians-list">
-                <div class="loading">Loading technicians...</div>
+                <div class="loading">Loading vendors...</div>
             </div>
         </div>
     </div>
@@ -429,33 +529,713 @@
         </div>
         <div class="chat-messages" id="chat-messages">
             <div class="chat-message assistant">
-                Hi! I can help you analyze technician data. Try asking about churn risk, regional trends, or specific technicians.
+                Hi! I can help you analyze 1099 vendor performance data. Try asking about top performers, regional trends, or job completion rates.
             </div>
         </div>
         <div class="suggestions">
-            <button class="suggestion" onclick="sendSuggestion('Which regions have the highest churn?')">High churn regions</button>
-            <button class="suggestion" onclick="sendSuggestion('What factors increase retention?')">Retention factors</button>
-            <button class="suggestion" onclick="sendSuggestion('Forecast for next quarter')">Q1 Forecast</button>
+            <button class="suggestion" onclick="sendSuggestion('Which vendors have the most jobs?')">Top vendors</button>
+            <button class="suggestion" onclick="sendSuggestion('Show job completion rates by region')">Regional performance</button>
+            <button class="suggestion" onclick="sendSuggestion('Which vendors have the highest profit?')">Profitability</button>
         </div>
         <div class="chat-input-area">
-            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about technician analytics..." onkeypress="handleKeyPress(event)">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about vendor performance..." onkeypress="handleKeyPress(event)">
             <button class="chat-send" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
         const API_BASE = '/api/v1';
-        let forecastChart = null;
-        let importanceChart = null;
+        let stateTrendsChart = null;
+        let regionChart = null;
+        let regionChart2 = null;
+        let trendChart = null;
+        let seasonalityChart = null;
+        let vendorsChart = null;
+        let stateData = null;  // Store state data for click handling
+        let selectedState = null;
+
+        // Color palette for states
+        const STATE_COLORS = [
+            'rgb(255, 99, 132)',   // red
+            'rgb(54, 162, 235)',   // blue
+            'rgb(255, 206, 86)',   // yellow
+            'rgb(75, 192, 192)',   // teal
+            'rgb(153, 102, 255)', // purple
+            'rgb(255, 159, 64)',  // orange
+            'rgb(199, 199, 199)', // gray
+            'rgb(83, 102, 255)',  // indigo
+            'rgb(255, 99, 255)',  // pink
+            'rgb(99, 255, 132)',  // green
+        ];
 
         // Load dashboard data on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadOverview();
-            loadForecast();
-            loadFeatureImportance();
-            loadRegions();
-            loadTechnicians();
+            loadStateTimeSeries();  // Load state-level jobs data
+            loadRegions();          // Also loads region chart
+            loadTechnicians();      // Also loads vendors chart
+            loadRecommendations();  // Load strategic recommendations
         });
+
+        // =====================================================================
+        // Strategic Recommendations (Cicero-inspired)
+        // =====================================================================
+
+        async function loadRecommendations(state = null) {
+            const container = document.getElementById('recommendations-list');
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Analyzing data and generating recommendations...</div>';
+
+            try {
+                let url = `${API_BASE}/dashboard/recommendations`;
+                if (state) {
+                    url += `?state=${state}`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Failed to load recommendations');
+                }
+
+                const data = await response.json();
+
+                // Update context display
+                updateRecommendationContext(data.context);
+
+                // Update intent model display
+                updateIntentModel(data.intent);
+
+                // Update state badge if filtered
+                const badge = document.getElementById('rec-state-badge');
+                if (state) {
+                    badge.textContent = state;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                // Render recommendations
+                renderRecommendations(data.recommendations);
+
+            } catch (error) {
+                console.error('Error loading recommendations:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #c62828;">
+                        Failed to load recommendations. <button onclick="loadRecommendations()" style="color: #1a237e; background: none; border: none; cursor: pointer; text-decoration: underline;">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function updateRecommendationContext(context) {
+            document.getElementById('ctx-total-jobs').textContent = (context.total_jobs || 0).toLocaleString();
+            document.getElementById('ctx-completion-rate').textContent = ((context.completion_rate || 0) * 100).toFixed(1) + '%';
+            document.getElementById('ctx-avg-profit').textContent = '$' + (context.avg_profit_per_job || 0).toFixed(0);
+
+            const trendEmoji = {
+                'increasing': '&#x1F4C8; Up',
+                'decreasing': '&#x1F4C9; Down',
+                'stable': '&#x2796; Stable'
+            };
+            document.getElementById('ctx-trend').innerHTML = trendEmoji[context.trend_direction] || '&#x2796; Stable';
+        }
+
+        function updateIntentModel(intent) {
+            const container = document.getElementById('intent-model');
+            if (!intent) {
+                container.style.display = 'none';
+                return;
+            }
+
+            const goalDescriptions = {
+                'maximize_earnings': 'Technicians are primarily focused on maximizing earnings. Recommendations should emphasize revenue opportunities.',
+                'efficiency': 'Technicians prioritize job efficiency. Recommendations should focus on time-saving strategies.',
+                'skill_growth': 'Technicians show interest in skill development. Training recommendations will likely be well-received.',
+                'work_life_balance': 'Technicians value work-life balance. Avoid recommendations that significantly increase workload.'
+            };
+
+            const description = goalDescriptions[intent.primary_goal] || 'Analyzing technician behavior patterns...';
+            document.getElementById('intent-description').textContent = description;
+            container.style.display = 'block';
+        }
+
+        function renderRecommendations(recommendations) {
+            const container = document.getElementById('recommendations-list');
+
+            if (!recommendations || recommendations.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">&#x2705;</div>
+                        <div>No critical recommendations at this time. Operations look healthy!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const priorityStyles = {
+                'critical': { bg: '#ffebee', border: '#c62828', icon: '&#x1F6A8;' },
+                'high': { bg: '#fff3e0', border: '#e65100', icon: '&#x26A0;' },
+                'medium': { bg: '#e3f2fd', border: '#1565c0', icon: '&#x1F4A1;' },
+                'low': { bg: '#e8f5e9', border: '#2e7d32', icon: '&#x2139;' }
+            };
+
+            const typeIcons = {
+                'efficiency': '&#x23F1;',
+                'quality': '&#x2705;',
+                'scheduling': '&#x1F4C5;',
+                'skill': '&#x1F393;',
+                'routing': '&#x1F5FA;',
+                'csat': '&#x1F60A;',
+                'financial': '&#x1F4B0;'
+            };
+
+            container.innerHTML = recommendations.map(rec => {
+                const style = priorityStyles[rec.priority] || priorityStyles['medium'];
+                const typeIcon = typeIcons[rec.type] || '&#x1F4CB;';
+
+                // Format impact predictions
+                const impactHtml = Object.entries(rec.predicted_impact || {}).map(([key, value]) => {
+                    const sign = value >= 0 ? '+' : '';
+                    const formatted = key.includes('rate') || key.includes('satisfaction')
+                        ? `${sign}${(value * 100).toFixed(0)}%`
+                        : key.includes('profit') || key.includes('revenue')
+                            ? `${sign}$${value.toFixed(0)}`
+                            : `${sign}${value.toFixed(1)}`;
+                    return `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px;">${key.replace(/_/g, ' ')}: ${formatted}</span>`;
+                }).join('');
+
+                // Format actions
+                const actionsHtml = (rec.actions || []).map(action =>
+                    `<li style="margin-bottom: 4px;">${escapeHtml(action)}</li>`
+                ).join('');
+
+                return `
+                    <div style="background: ${style.bg}; border-left: 4px solid ${style.border}; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <div>
+                                <div style="font-size: 16px; font-weight: 600; color: #333; display: flex; align-items: center; gap: 8px;">
+                                    <span>${style.icon}</span>
+                                    ${escapeHtml(rec.title)}
+                                    <span style="font-size: 11px; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">${typeIcon} ${rec.type}</span>
+                                </div>
+                                <div style="font-size: 13px; color: #666; margin-top: 4px;">
+                                    ${escapeHtml(rec.description)}
+                                </div>
+                            </div>
+                            <div style="text-align: right; min-width: 80px;">
+                                <div style="font-size: 11px; color: #666;">Confidence</div>
+                                <div style="font-size: 16px; font-weight: bold; color: ${style.border};">${((rec.confidence || 0) * 100).toFixed(0)}%</div>
+                            </div>
+                        </div>
+
+                        <!-- Rationale -->
+                        <div style="font-size: 12px; color: #555; margin-bottom: 12px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                            <strong>Rationale:</strong> ${escapeHtml(rec.rationale)}
+                        </div>
+
+                        <!-- Predicted Impact -->
+                        ${impactHtml ? `<div style="margin-bottom: 12px;"><strong style="font-size: 12px; color: #666;">Predicted Impact:</strong><br>${impactHtml}</div>` : ''}
+
+                        <!-- Mutual Benefit -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div style="font-size: 12px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                                <strong style="color: #1565c0;">&#x1F464; Technician Benefit:</strong><br>
+                                ${escapeHtml(rec.technician_benefit)}
+                            </div>
+                            <div style="font-size: 12px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                                <strong style="color: #2e7d32;">&#x1F3E2; Company Benefit:</strong><br>
+                                ${escapeHtml(rec.company_benefit)}
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        ${actionsHtml ? `
+                            <details style="font-size: 12px;">
+                                <summary style="cursor: pointer; color: #1a237e; font-weight: 600;">Action Items (${rec.actions.length})</summary>
+                                <ul style="margin-top: 8px; padding-left: 20px; color: #333;">${actionsHtml}</ul>
+                            </details>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Hook into state selection to also filter recommendations
+        const originalSelectState = selectState;
+        selectState = async function(state) {
+            await originalSelectState(state);
+            loadRecommendations(state);
+        };
+
+        const originalBackToAllStates = backToAllStates;
+        backToAllStates = function() {
+            originalBackToAllStates();
+            loadRecommendations(null);
+        };
+
+        async function loadStateTimeSeries() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/timeseries/jobs/by-state?days=90&top_n=10`);
+                if (!response.ok) {
+                    showPlaceholderStateChart();
+                    return;
+                }
+                const data = await response.json();
+                stateData = data;  // Store for click handling
+
+                if (!data.states || data.states.length === 0) {
+                    showPlaceholderStateChart();
+                    return;
+                }
+
+                renderStateChart(data, null);
+            } catch (error) {
+                console.error('Error loading state time series:', error);
+                showPlaceholderStateChart();
+            }
+        }
+
+        function renderStateChart(data, highlightState) {
+            const ctx = document.getElementById('state-trends-chart').getContext('2d');
+            if (stateTrendsChart) stateTrendsChart.destroy();
+
+            // Get all unique dates across all states
+            const allDates = new Set();
+            data.states.forEach(state => {
+                if (data.data[state]) {
+                    data.data[state].forEach(point => allDates.add(point.date));
+                }
+            });
+            const sortedDates = Array.from(allDates).sort();
+
+            // Build datasets for each state
+            const datasets = data.states.map((state, idx) => {
+                const statePoints = data.data[state] || [];
+                const dateValueMap = {};
+                statePoints.forEach(p => { dateValueMap[p.date] = p.value; });
+
+                const values = sortedDates.map(date => dateValueMap[date] || null);
+                const color = STATE_COLORS[idx % STATE_COLORS.length];
+                const isHighlighted = highlightState === state;
+                const isOther = highlightState && highlightState !== state;
+
+                return {
+                    label: state,
+                    data: values,
+                    borderColor: isOther ? color.replace('rgb', 'rgba').replace(')', ', 0.2)') : color,
+                    backgroundColor: 'transparent',
+                    borderWidth: isHighlighted ? 4 : (isOther ? 1 : 2),
+                    tension: 0.3,
+                    pointRadius: isHighlighted ? 4 : (isOther ? 0 : 2),
+                    pointHoverRadius: 6,
+                    order: isHighlighted ? 0 : 1,  // Draw highlighted on top
+                };
+            });
+
+            stateTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            },
+                            onClick: (e, legendItem, legend) => {
+                                // Click on legend item to select state
+                                const state = legendItem.text;
+                                selectState(state);
+                            }
+                        },
+                        title: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => items[0]?.label || '',
+                                label: (item) => `${item.dataset.label}: ${item.raw?.toFixed(0) || 0} jobs`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            ticks: {
+                                maxTicksLimit: 15,
+                                callback: function(val, idx) {
+                                    const date = this.getLabelForValue(val);
+                                    return date ? date.substring(5) : '';  // Show MM-DD
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: 'Jobs' },
+                            beginAtZero: true
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const datasetIndex = elements[0].datasetIndex;
+                            const state = stateTrendsChart.data.datasets[datasetIndex].label;
+                            selectState(state);
+                        }
+                    }
+                }
+            });
+        }
+
+        async function selectState(state) {
+            if (selectedState === state) return;  // Already selected
+
+            selectedState = state;
+            document.getElementById('selected-state-label').textContent = `- ${state}`;
+            document.getElementById('back-to-all-states').style.display = 'inline-block';
+
+            // Show decomposition rows
+            document.getElementById('state-decomposition-row').style.display = 'grid';
+            document.getElementById('forecast-metrics-row').style.display = 'grid';
+            document.getElementById('region-chart-standalone').style.display = 'none';
+
+            // Update state labels
+            document.getElementById('trend-state-label').textContent = `(${state})`;
+            document.getElementById('seasonality-state-label').textContent = `(${state})`;
+            document.getElementById('metrics-state-label').textContent = `(${state})`;
+
+            // Highlight selected state in chart
+            if (stateData) {
+                renderStateChart(stateData, state);
+            }
+
+            // Load forecast for selected state
+            await loadStateForecast(state);
+        }
+
+        function backToAllStates() {
+            selectedState = null;
+            document.getElementById('selected-state-label').textContent = '';
+            document.getElementById('back-to-all-states').style.display = 'none';
+
+            // Hide decomposition rows
+            document.getElementById('state-decomposition-row').style.display = 'none';
+            document.getElementById('forecast-metrics-row').style.display = 'none';
+            document.getElementById('region-chart-standalone').style.display = 'block';
+
+            // Reset chart to show all states equally
+            if (stateData) {
+                renderStateChart(stateData, null);
+            }
+        }
+
+        async function loadStateForecast(state) {
+            // Show loading state
+            document.getElementById('forecast-metrics').innerHTML = '<p style="text-align:center;color:#666;">Loading forecast...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/forecast/jobs/by-state?state=${state}&days_history=90&days_forecast=30`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    document.getElementById('forecast-metrics').innerHTML = `<p style="color:#c62828;">Error: ${error.detail || 'Failed to load forecast'}</p>`;
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Update the state chart to show forecast
+                updateStateChartWithForecast(state, data);
+
+                // Update trend decomposition chart
+                updateTrendChart(data.components);
+
+                // Update seasonality chart
+                updateSeasonalityChart(data.components);
+
+                // Update metrics display
+                updateForecastMetrics(data.metrics);
+
+            } catch (error) {
+                console.error('Error loading state forecast:', error);
+                document.getElementById('forecast-metrics').innerHTML = '<p style="color:#c62828;">Failed to load forecast</p>';
+            }
+        }
+
+        function updateStateChartWithForecast(state, forecastData) {
+            const ctx = document.getElementById('state-trends-chart').getContext('2d');
+            if (stateTrendsChart) stateTrendsChart.destroy();
+
+            const historicalDates = forecastData.historical.dates;
+            const forecastDates = forecastData.forecast.dates;
+            const allDates = [...historicalDates, ...forecastDates];
+
+            // Create datasets
+            const historicalValues = [...forecastData.historical.yhat, ...Array(forecastDates.length).fill(null)];
+            const forecastValues = [...Array(historicalDates.length).fill(null), ...forecastData.forecast.yhat];
+            const upperBand = [...Array(historicalDates.length).fill(null), ...forecastData.forecast.yhat_upper];
+            const lowerBand = [...Array(historicalDates.length).fill(null), ...forecastData.forecast.yhat_lower];
+
+            stateTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allDates,
+                    datasets: [
+                        {
+                            label: `${state} Historical`,
+                            data: historicalValues,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 3
+                        },
+                        {
+                            label: `${state} Forecast`,
+                            data: forecastValues,
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Upper Bound (95%)',
+                            data: upperBand,
+                            borderColor: 'rgba(255, 99, 132, 0.3)',
+                            borderDash: [2, 2],
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Lower Bound (95%)',
+                            data: lowerBand,
+                            borderColor: 'rgba(255, 99, 132, 0.3)',
+                            borderDash: [2, 2],
+                            fill: '-1',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: {
+                            display: true,
+                            text: `Prophet Forecast for ${state} with 95% Confidence Interval`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            ticks: {
+                                maxTicksLimit: 15,
+                                callback: function(val, idx) {
+                                    const date = this.getLabelForValue(val);
+                                    return date ? date.substring(5) : '';
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: 'Jobs' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function showPlaceholderStateChart() {
+            const ctx = document.getElementById('state-trends-chart').getContext('2d');
+            if (stateTrendsChart) stateTrendsChart.destroy();
+
+            // Generate sample data for a few states
+            const states = ['CA', 'TX', 'FL', 'NY', 'IL'];
+            const labels = [];
+            const today = new Date();
+
+            for (let i = 89; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                labels.push(date.toISOString().split('T')[0]);
+            }
+
+            const datasets = states.map((state, idx) => {
+                const baseValue = 10 + idx * 5;
+                const data = labels.map((_, i) =>
+                    Math.floor(baseValue + Math.random() * 10 + Math.sin(i / 7) * 3)
+                );
+                return {
+                    label: state,
+                    data: data,
+                    borderColor: STATE_COLORS[idx],
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 2
+                };
+            });
+
+            stateTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Demo data - sync Snowflake to see real data' }
+                    }
+                }
+            });
+        }
+
+        function updateTrendChart(components) {
+            const ctx = document.getElementById('trend-chart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+
+            if (!components || !components.trend) {
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: 'No trend data available' }
+                        }
+                    }
+                });
+                return;
+            }
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: components.trend.dates,
+                    datasets: [{
+                        label: 'Trend',
+                        data: components.trend.values,
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Linear Trend Component' }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            ticks: { maxTicksLimit: 10 }
+                        },
+                        y: { title: { display: true, text: 'Trend Value' } }
+                    }
+                }
+            });
+        }
+
+        function updateSeasonalityChart(components) {
+            const ctx = document.getElementById('seasonality-chart').getContext('2d');
+            if (seasonalityChart) seasonalityChart.destroy();
+
+            // Prefer weekly, then yearly seasonality
+            let seasonalityData = components?.weekly_seasonality || components?.yearly_seasonality;
+
+            if (!seasonalityData) {
+                seasonalityChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: 'No seasonality detected' }
+                        }
+                    }
+                });
+                return;
+            }
+
+            // For weekly, only show 7 days
+            let labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            let values = seasonalityData.values.slice(-7);
+
+            seasonalityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Weekly Pattern',
+                        data: values,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(199, 199, 199, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Day-of-Week Effect on Jobs' }
+                    },
+                    scales: {
+                        y: { title: { display: true, text: 'Seasonal Effect' } }
+                    }
+                }
+            });
+        }
+
+        function updateForecastMetrics(metrics) {
+            const container = document.getElementById('forecast-metrics');
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1a237e;">${metrics.mape?.toFixed(1) || 'N/A'}%</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">MAPE</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1a237e;">${metrics.mae?.toFixed(2) || 'N/A'}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">MAE</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1a237e;">${metrics.rmse?.toFixed(2) || 'N/A'}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">RMSE</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1a237e;">${metrics.training_points || 'N/A'}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">Training Points</div>
+                    </div>
+                </div>
+            `;
+        }
 
         async function loadOverview() {
             try {
@@ -465,174 +1245,14 @@
 
                 document.getElementById('total-technicians').textContent = data.total_technicians.toLocaleString();
                 document.getElementById('active-technicians').textContent = data.active_technicians.toLocaleString();
-                document.getElementById('churn-rate').textContent = (data.churn_rate * 100).toFixed(1) + '%';
-                document.getElementById('high-risk').textContent = data.high_risk_count.toLocaleString();
+                // New vendors = total - active (vendors with no jobs yet)
+                const newVendors = data.total_technicians - data.active_technicians;
+                document.getElementById('churn-rate').textContent = newVendors.toLocaleString();
+                document.getElementById('high-risk').textContent = data.regions_count.toLocaleString();
                 document.getElementById('avg-tenure').textContent = Math.round(data.avg_tenure_days) + ' days';
             } catch (error) {
                 console.error('Error loading overview:', error);
             }
-        }
-
-        async function loadForecast() {
-            try {
-                const response = await fetch(`${API_BASE}/dashboard/forecast?forecast_type=headcount&periods=90`);
-                if (!response.ok) {
-                    // If no model exists, show placeholder
-                    showPlaceholderForecast();
-                    return;
-                }
-                const data = await response.json();
-
-                const ctx = document.getElementById('forecast-chart').getContext('2d');
-                if (forecastChart) forecastChart.destroy();
-
-                forecastChart = new Chart(ctx, {
-                    type: 'line',
-                    data: data.chart_data,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'top' }
-                        },
-                        scales: {
-                            x: {
-                                display: true,
-                                title: { display: true, text: 'Date' }
-                            },
-                            y: {
-                                display: true,
-                                title: { display: true, text: 'Technician Count' }
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading forecast:', error);
-                showPlaceholderForecast();
-            }
-        }
-
-        function showPlaceholderForecast() {
-            const ctx = document.getElementById('forecast-chart').getContext('2d');
-            if (forecastChart) forecastChart.destroy();
-
-            // Generate sample forecast data
-            const labels = [];
-            const data = [];
-            const upper = [];
-            const lower = [];
-            const today = new Date();
-
-            for (let i = 0; i < 90; i++) {
-                const date = new Date(today);
-                date.setDate(date.getDate() + i);
-                labels.push(date.toISOString().split('T')[0]);
-                const base = 150 + Math.sin(i / 30) * 20 + i * 0.3;
-                data.push(base);
-                upper.push(base + 15);
-                lower.push(base - 15);
-            }
-
-            forecastChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Forecast (Demo)',
-                            data: data,
-                            borderColor: 'rgb(75, 192, 192)',
-                            fill: false
-                        },
-                        {
-                            label: 'Upper Bound',
-                            data: upper,
-                            borderColor: 'rgba(75, 192, 192, 0.3)',
-                            borderDash: [5, 5],
-                            fill: false
-                        },
-                        {
-                            label: 'Lower Bound',
-                            data: lower,
-                            borderColor: 'rgba(75, 192, 192, 0.3)',
-                            borderDash: [5, 5],
-                            fill: '-1',
-                            backgroundColor: 'rgba(75, 192, 192, 0.1)'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        title: { display: true, text: 'Train a Prophet model to see real forecasts' }
-                    }
-                }
-            });
-        }
-
-        async function loadFeatureImportance() {
-            try {
-                const response = await fetch(`${API_BASE}/dashboard/feature-importance?model_type=EBM`);
-                if (!response.ok) {
-                    showPlaceholderImportance();
-                    return;
-                }
-                const data = await response.json();
-
-                const ctx = document.getElementById('importance-chart').getContext('2d');
-                if (importanceChart) importanceChart.destroy();
-
-                importanceChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: data.chart_data,
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading feature importance:', error);
-                showPlaceholderImportance();
-            }
-        }
-
-        function showPlaceholderImportance() {
-            const ctx = document.getElementById('importance-chart').getContext('2d');
-            if (importanceChart) importanceChart.destroy();
-
-            importanceChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Tenure Days', 'Avg Rating', 'Jobs/Week', 'Completion Rate', 'Competition'],
-                    datasets: [{
-                        label: 'Feature Importance (Demo)',
-                        data: [0.35, 0.25, 0.18, 0.12, 0.10],
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(153, 102, 255, 0.8)'
-                        ]
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: 'Train an EBM model to see real importance' }
-                    }
-                }
-            });
         }
 
         async function loadRegions() {
@@ -644,52 +1264,161 @@
                 const tbody = document.getElementById('regions-tbody');
 
                 if (data.regions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="loading">No region data available. Add technicians to see regional analytics.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">No region data available. Sync vendor data to see regional analytics.</td></tr>';
                     return;
                 }
 
+                // New vendors = total - active for each region
                 tbody.innerHTML = data.regions.map(r => `
                     <tr>
                         <td><strong>${r.region}</strong></td>
                         <td>${r.technician_count}</td>
                         <td>${r.active_count}</td>
-                        <td>${r.churned_count}</td>
-                        <td><span class="risk-badge ${r.risk_level.toLowerCase()}">${r.risk_level}</span></td>
+                        <td>${r.technician_count - r.active_count}</td>
+                        <td><span class="risk-badge low">Active</span></td>
                         <td>${r.avg_tenure_days ? Math.round(r.avg_tenure_days) + ' days' : '-'}</td>
                     </tr>
                 `).join('');
+
+                // Update the region chart
+                updateRegionChart(data.regions);
             } catch (error) {
                 console.error('Error loading regions:', error);
                 document.getElementById('regions-tbody').innerHTML = '<tr><td colspan="6" class="loading">No region data available yet.</td></tr>';
             }
         }
 
+        function updateRegionChart(regions) {
+            // Update both region charts
+            const ctx1 = document.getElementById('region-chart');
+            const ctx2 = document.getElementById('region-chart-2');
+
+            if (regionChart) regionChart.destroy();
+            if (regionChart2) regionChart2.destroy();
+
+            const colors = [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)'
+            ];
+
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: regions.map(r => r.region),
+                    datasets: [{
+                        label: 'Vendors',
+                        data: regions.map(r => r.technician_count),
+                        backgroundColor: colors.slice(0, regions.length)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Vendors' }
+                        }
+                    }
+                }
+            };
+
+            if (ctx1) regionChart = new Chart(ctx1.getContext('2d'), chartConfig);
+            if (ctx2) regionChart2 = new Chart(ctx2.getContext('2d'), chartConfig);
+        }
+
         async function loadTechnicians() {
             try {
                 const response = await fetch(`${API_BASE}/dashboard/technicians?page=1&page_size=10`);
-                if (!response.ok) throw new Error('Failed to load technicians');
+                if (!response.ok) throw new Error('Failed to load vendors');
                 const data = await response.json();
 
                 const container = document.getElementById('technicians-list');
 
                 if (data.technicians.length === 0) {
-                    container.innerHTML = '<div class="loading">No technicians found. Add technician data to see this list.</div>';
+                    container.innerHTML = '<div class="loading">No vendors found. Sync vendor data to see this list.</div>';
                     return;
                 }
 
-                container.innerHTML = data.technicians.map(t => `
+                // Sort by total jobs descending and show vendor details
+                const vendors = data.technicians.sort((a, b) =>
+                    (b.metrics?.total_jobs || 0) - (a.metrics?.total_jobs || 0)
+                );
+
+                container.innerHTML = vendors.map(t => {
+                    const vendorName = t.metrics?.vendor_name || `Vendor ${t.external_id}`;
+                    const totalJobs = t.metrics?.total_jobs || 0;
+                    const completedJobs = t.metrics?.completed_jobs || 0;
+                    const completionRate = t.metrics?.completion_rate || 0;
+                    const totalProfit = t.metrics?.total_profit || 0;
+
+                    return `
                     <div class="tech-item">
                         <div class="tech-info">
-                            <div class="name">${t.external_id}</div>
-                            <div class="details">${t.region} | ${t.tenure_days || 0} days tenure | ${t.status}</div>
+                            <div class="name">${vendorName}</div>
+                            <div class="details">
+                                ${t.region} | ${totalJobs} jobs | ${completedJobs} completed (${completionRate.toFixed(1)}%) | $${totalProfit.toFixed(0)} profit
+                            </div>
                         </div>
-                        <span class="risk-badge ${(t.risk_level || 'low').toLowerCase()}">${t.risk_level || 'N/A'}</span>
+                        <span class="risk-badge ${totalJobs > 50 ? 'low' : totalJobs > 10 ? 'medium' : 'high'}">${totalJobs > 50 ? 'Top' : totalJobs > 10 ? 'Active' : 'New'}</span>
                     </div>
-                `).join('');
+                `}).join('');
+
+                // Update top vendors chart
+                updateVendorsChart(vendors.slice(0, 8));
             } catch (error) {
-                console.error('Error loading technicians:', error);
-                document.getElementById('technicians-list').innerHTML = '<div class="loading">No technician data available yet.</div>';
+                console.error('Error loading vendors:', error);
+                document.getElementById('technicians-list').innerHTML = '<div class="loading">No vendor data available yet.</div>';
             }
+        }
+
+        function updateVendorsChart(vendors) {
+            const ctx = document.getElementById('vendors-chart').getContext('2d');
+            if (vendorsChart) vendorsChart.destroy();
+
+            const colors = [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(199, 199, 199, 0.8)',
+                'rgba(83, 102, 255, 0.8)'
+            ];
+
+            vendorsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: vendors.map(v => v.metrics?.vendor_name?.substring(0, 15) || `V${v.external_id}`),
+                    datasets: [{
+                        label: 'Jobs',
+                        data: vendors.map(v => v.metrics?.total_jobs || 0),
+                        backgroundColor: colors.slice(0, vendors.length)
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Total Jobs' }
+                        }
+                    }
+                }
+            });
         }
 
         // Chat functionality

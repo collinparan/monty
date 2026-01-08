@@ -33,7 +33,7 @@ router = APIRouter(prefix="/api/v1/models", tags=["Models"])
 
 def get_redis_client() -> redis.Redis:
     """Get Redis client from main module."""
-    from app.main import get_redis
+    from app.dependencies import get_redis
 
     return get_redis()
 
