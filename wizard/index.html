@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monty - Project Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .tagline {
+            color: #b8860b;
+            font-style: italic;
+            margin-top: 8px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .checkbox-item input {
+            margin-right: 10px;
+            accent-color: #ffd700;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            color: #1a1a2e;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #00bcd4;
+            color: #00bcd4;
+            width: auto;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 188, 212, 0.1);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Schema display */
+        .schema-table {
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .schema-table-header {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+        }
+
+        .schema-table-header:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .schema-table-header input {
+            margin-right: 10px;
+            accent-color: #ffd700;
+        }
+
+        .schema-table-name {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .schema-table-info {
+            margin-left: auto;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .schema-columns {
+            padding: 8px 12px 12px 36px;
+            display: none;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .schema-columns.expanded {
+            display: block;
+        }
+
+        .schema-column {
+            padding: 4px 0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .schema-column-name {
+            color: #00bcd4;
+            min-width: 150px;
+        }
+
+        .schema-column-type {
+            color: #888;
+        }
+
+        /* Progress Section */
+        #progress-section {
+            display: none;
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-running {
+            background: rgba(0, 200, 83, 0.2);
+            color: #00c853;
+        }
+
+        .status-complete {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        .status-error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+        }
+
+        .story-list {
+            list-style: none;
+        }
+
+        .story-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .story-item.pending {
+            border-left-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .story-item.in-progress {
+            border-left-color: #00bcd4;
+            background: rgba(0, 188, 212, 0.1);
+        }
+
+        .story-item.complete {
+            border-left-color: #00c853;
+        }
+
+        .story-status {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .story-status-icon {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .story-item.pending .story-status-icon {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .story-item.in-progress .story-status-icon {
+            border: 2px solid #00bcd4;
+            animation: pulse 1.5s infinite;
+        }
+
+        .story-item.complete .story-status-icon {
+            background: #00c853;
+            color: #fff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 188, 212, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(0, 188, 212, 0); }
+        }
+
+        .story-content h4 {
+            color: #fff;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .story-content p {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .log-output {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+
+        .log-line {
+            padding: 2px 0;
+            color: #8b949e;
+        }
+
+        .log-line.info { color: #58a6ff; }
+        .log-line.success { color: #3fb950; }
+        .log-line.error { color: #f85149; }
+        .log-line.tool { color: #d29922; }
+
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-btn.active {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        #log-view {
+            display: none;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Monty</div>
+            <p class="tagline">"Excellent..." - C. Montgomery Burns</p>
+        </header>
+
+        <!-- Setup Form -->
+        <div id="setup-section">
+            <form id="setup-form">
+                <div class="card">
+                    <h2>What do you want to build?</h2>
+                    <div class="form-group">
+                        <label for="project-name">Project Name</label>
+                        <input type="text" id="project-name" placeholder="my-awesome-app" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Describe your project</label>
+                        <textarea id="description" placeholder="A realtime chat application with AI-powered responses, user authentication, and message history..." required></textarea>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Do you have existing data?</h2>
+                    <div class="form-group">
+                        <label>Data Sources</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="datasource" value="none" id="no-data">
+                                No existing data (start fresh)
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="datasource" value="legacy-db">
+                                Legacy Database
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="datasource" value="rest-api">
+                                REST API
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="datasource" value="graphql">
+                                GraphQL API
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="datasource" value="csv-files">
+                                CSV/Excel Files
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="datasource" value="s3">
+                                S3/Cloud Storage
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Legacy Database Details (shown when legacy-db is checked) -->
+                    <div class="form-group" id="legacy-db-details" style="display: none;">
+                        <label for="legacy-db-type">Database Type</label>
+                        <select id="legacy-db-type">
+                            <option value="">Select database type...</option>
+                            <option value="postgresql">PostgreSQL</option>
+                            <option value="mysql">MySQL / MariaDB</option>
+                            <option value="mssql">SQL Server</option>
+                            <option value="oracle">Oracle</option>
+                            <option value="mongodb">MongoDB</option>
+                            <option value="snowflake">Snowflake</option>
+                            <option value="bigquery">BigQuery</option>
+                            <option value="redshift">Redshift</option>
+                        </select>
+                        <div style="margin-top: 12px;">
+                            <label for="legacy-db-connection">Connection Details</label>
+                            <textarea id="legacy-db-connection" placeholder="Describe the connection (host, database name, tables you need access to)...&#10;&#10;Example: PostgreSQL at db.example.com, database 'customers', need access to users and orders tables"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- REST API Details (shown when rest-api is checked) -->
+                    <div class="form-group" id="rest-api-details" style="display: none;">
+                        <label for="rest-api-url">API Base URL</label>
+                        <input type="text" id="rest-api-url" placeholder="https://api.example.com/v1">
+                        <div style="margin-top: 12px;">
+                            <label for="rest-api-auth">Authentication Type</label>
+                            <select id="rest-api-auth">
+                                <option value="">Select auth type...</option>
+                                <option value="none">None (Public API)</option>
+                                <option value="api-key">API Key</option>
+                                <option value="bearer">Bearer Token</option>
+                                <option value="basic">Basic Auth</option>
+                                <option value="oauth2">OAuth 2.0</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 12px;">
+                            <label for="rest-api-endpoints">Key Endpoints</label>
+                            <textarea id="rest-api-endpoints" placeholder="List the main endpoints you need to connect to...&#10;&#10;Example:&#10;GET /users - list users&#10;POST /orders - create order&#10;GET /products/{id} - get product details"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- File/S3 Details (shown when csv-files or s3 is checked) -->
+                    <div class="form-group" id="file-details" style="display: none;">
+                        <label for="file-location">File Location</label>
+                        <textarea id="file-location" placeholder="Describe where your files are located...&#10;&#10;Example: S3 bucket 's3://my-company-data/reports/' containing monthly CSV exports"></textarea>
+                    </div>
+
+                    <!-- Test Connection Button -->
+                    <div class="form-group" id="test-connection-section" style="display: none;">
+                        <button type="button" class="btn btn-secondary" id="test-connection-btn">
+                            Test Connection & Discover Schema
+                        </button>
+                        <div id="connection-status" style="margin-top: 12px; display: none;">
+                            <div id="connection-spinner" style="display: none;">
+                                <span style="color: #00bcd4;">Testing connection...</span>
+                            </div>
+                            <div id="connection-success" style="display: none; color: #00c853;">
+                                Connected successfully!
+                            </div>
+                            <div id="connection-error" style="display: none; color: #ff5252;">
+                                Connection failed: <span id="connection-error-msg"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discovered Schema (shown after successful connection test) -->
+                    <div class="form-group" id="schema-discovery" style="display: none;">
+                        <label>Discovered Schema</label>
+                        <div id="schema-content" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; max-height: 300px; overflow-y: auto;">
+                            <!-- Schema will be populated here -->
+                        </div>
+                        <p style="color: #666; font-size: 0.8rem; margin-top: 8px;">
+                            Select the tables/endpoints you want to use in your project.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Tech Stack Preferences</h2>
+                    <div class="form-group">
+                        <label>Backend</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="backend" value="fastapi" checked>
+                                FastAPI (Python)
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="backend" value="express">
+                                Express (Node.js)
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="backend" value="flask">
+                                Flask (Python)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Database</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="database" value="postgresql" checked>
+                                PostgreSQL
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="database" value="mongodb">
+                                MongoDB
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="database" value="redis">
+                                Redis
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="database" value="sqlite">
+                                SQLite
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Features</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="features" value="auth">
+                                Authentication
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="features" value="websocket">
+                                WebSocket/Realtime
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="features" value="ai">
+                                AI/LLM (Single Agent)
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="features" value="multi-agent">
+                                Multi-Agent (CrewAI)
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="features" value="api">
+                                REST API
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Output Directory</h2>
+                    <div class="form-group">
+                        <label for="output-dir">Where should Monty create your project?</label>
+                        <input type="text" id="output-dir" placeholder="./output/my-project" value="./output">
+                        <p style="color: #666; font-size: 0.8rem; margin-top: 8px;">
+                            Projects are created in the output/ folder, separate from Monty itself.
+                        </p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="start-btn">
+                    Start Building
+                </button>
+            </form>
+        </div>
+
+        <!-- Progress Section -->
+        <div id="progress-section">
+            <div class="card">
+                <div class="progress-header">
+                    <h2>Building: <span id="project-title"></span></h2>
+                    <span class="status-badge status-running" id="status-badge">Running</span>
+                </div>
+
+                <!-- Iteration indicator (the famous loop!) -->
+                <div id="iteration-indicator" style="margin-bottom: 20px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="color: #ffd700; font-weight: 600;">Iteration</span>
+                        <span id="iteration-current" style="font-size: 1.5rem; color: #fff;">1</span>
+                        <span style="color: #666;">of</span>
+                        <span id="iteration-total" style="color: #888;">20</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; overflow: hidden;">
+                        <div id="iteration-progress" style="background: linear-gradient(90deg, #ffd700, #ffaa00); height: 100%; width: 5%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="stories">Stories</button>
+                    <button class="view-btn" data-view="log">Live Log</button>
+                </div>
+
+                <div id="stories-view">
+                    <ul class="story-list" id="story-list">
+                        <!-- Stories will be populated here -->
+                    </ul>
+                </div>
+
+                <div id="log-view">
+                    <div class="log-output" id="log-output">
+                        <!-- Log lines will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="new-project-btn" style="display: none;">
+                Start New Project
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let ws = null;
+        let stories = [];
+        let discoveredSchema = null;
+
+        // Elements
+        const setupSection = document.getElementById('setup-section');
+        const progressSection = document.getElementById('progress-section');
+        const setupForm = document.getElementById('setup-form');
+        const startBtn = document.getElementById('start-btn');
+        const storyList = document.getElementById('story-list');
+        const logOutput = document.getElementById('log-output');
+        const statusBadge = document.getElementById('status-badge');
+        const projectTitle = document.getElementById('project-title');
+        const newProjectBtn = document.getElementById('new-project-btn');
+
+        // Update test connection button visibility
+        function updateTestConnectionVisibility() {
+            const hasDataSource = document.querySelector('input[value="legacy-db"]').checked ||
+                                  document.querySelector('input[value="rest-api"]').checked;
+            document.getElementById('test-connection-section').style.display = hasDataSource ? 'block' : 'none';
+
+            // Hide schema discovery when data sources change
+            document.getElementById('schema-discovery').style.display = 'none';
+            discoveredSchema = null;
+        }
+
+        // Data source toggle - show/hide detail sections
+        document.querySelectorAll('input[name="datasource"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                // Show/hide legacy database details
+                const legacyDbChecked = document.querySelector('input[value="legacy-db"]').checked;
+                document.getElementById('legacy-db-details').style.display = legacyDbChecked ? 'block' : 'none';
+
+                // Show/hide REST API details
+                const restApiChecked = document.querySelector('input[value="rest-api"]').checked;
+                document.getElementById('rest-api-details').style.display = restApiChecked ? 'block' : 'none';
+
+                // Show/hide file details
+                const filesChecked = document.querySelector('input[value="csv-files"]').checked ||
+                                    document.querySelector('input[value="s3"]').checked;
+                document.getElementById('file-details').style.display = filesChecked ? 'block' : 'none';
+
+                // If "no data" is checked, uncheck others
+                if (cb.value === 'none' && cb.checked) {
+                    document.querySelectorAll('input[name="datasource"]:not([value="none"])').forEach(other => {
+                        other.checked = false;
+                    });
+                    document.getElementById('legacy-db-details').style.display = 'none';
+                    document.getElementById('rest-api-details').style.display = 'none';
+                    document.getElementById('file-details').style.display = 'none';
+                }
+                // If any other is checked, uncheck "no data"
+                if (cb.value !== 'none' && cb.checked) {
+                    document.getElementById('no-data').checked = false;
+                }
+
+                updateTestConnectionVisibility();
+            });
+        });
+
+        // Test Connection button handler
+        document.getElementById('test-connection-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('test-connection-btn');
+            const statusDiv = document.getElementById('connection-status');
+            const spinner = document.getElementById('connection-spinner');
+            const successDiv = document.getElementById('connection-success');
+            const errorDiv = document.getElementById('connection-error');
+            const schemaDiv = document.getElementById('schema-discovery');
+
+            // Reset status
+            statusDiv.style.display = 'block';
+            spinner.style.display = 'block';
+            successDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            schemaDiv.style.display = 'none';
+            btn.disabled = true;
+
+            // Gather connection details
+            const connectionData = {};
+
+            if (document.querySelector('input[value="legacy-db"]').checked) {
+                connectionData.type = 'database';
+                connectionData.dbType = document.getElementById('legacy-db-type').value;
+                connectionData.connectionInfo = document.getElementById('legacy-db-connection').value;
+            }
+
+            if (document.querySelector('input[value="rest-api"]').checked) {
+                connectionData.type = 'rest-api';
+                connectionData.baseUrl = document.getElementById('rest-api-url').value;
+                connectionData.authType = document.getElementById('rest-api-auth').value;
+            }
+
+            try {
+                const response = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(connectionData)
+                });
+
+                const result = await response.json();
+                spinner.style.display = 'none';
+
+                if (result.success) {
+                    successDiv.style.display = 'block';
+                    discoveredSchema = result.schema;
+
+                    // Display discovered schema
+                    if (result.schema && (result.schema.tables || result.schema.endpoints)) {
+                        renderSchema(result.schema);
+                        schemaDiv.style.display = 'block';
+                    }
+                } else {
+                    errorDiv.style.display = 'block';
+                    document.getElementById('connection-error-msg').textContent = result.error || 'Unknown error';
+                }
+            } catch (err) {
+                spinner.style.display = 'none';
+                errorDiv.style.display = 'block';
+                document.getElementById('connection-error-msg').textContent = err.message;
+            }
+
+            btn.disabled = false;
+        });
+
+        // Render discovered schema
+        function renderSchema(schema) {
+            const container = document.getElementById('schema-content');
+            container.innerHTML = '';
+
+            if (schema.tables) {
+                // Database schema
+                schema.tables.forEach((table, idx) => {
+                    const tableDiv = document.createElement('div');
+                    tableDiv.className = 'schema-table';
+                    tableDiv.innerHTML = `
+                        <div class="schema-table-header" onclick="toggleColumns(${idx})">
+                            <input type="checkbox" name="selected-table" value="${table.name}" checked onclick="event.stopPropagation()">
+                            <span class="schema-table-name">${table.name}</span>
+                            <span class="schema-table-info">${table.columns?.length || 0} columns, ~${table.rowCount || '?'} rows</span>
+                        </div>
+                        <div class="schema-columns" id="columns-${idx}">
+                            ${(table.columns || []).map(col => `
+                                <div class="schema-column">
+                                    <span class="schema-column-name">${col.name}</span>
+                                    <span class="schema-column-type">${col.type}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    container.appendChild(tableDiv);
+                });
+            }
+
+            if (schema.endpoints) {
+                // REST API endpoints
+                schema.endpoints.forEach((endpoint, idx) => {
+                    const endpointDiv = document.createElement('div');
+                    endpointDiv.className = 'schema-table';
+                    endpointDiv.innerHTML = `
+                        <div class="schema-table-header">
+                            <input type="checkbox" name="selected-endpoint" value="${endpoint.path}" checked>
+                            <span class="schema-table-name" style="color: ${endpoint.method === 'GET' ? '#00c853' : endpoint.method === 'POST' ? '#ffd700' : '#00bcd4'}">${endpoint.method}</span>
+                            <span class="schema-table-name" style="margin-left: 8px;">${endpoint.path}</span>
+                            <span class="schema-table-info">${endpoint.description || ''}</span>
+                        </div>
+                    `;
+                    container.appendChild(endpointDiv);
+                });
+            }
+        }
+
+        // Toggle column visibility
+        function toggleColumns(idx) {
+            const columnsDiv = document.getElementById(`columns-${idx}`);
+            columnsDiv.classList.toggle('expanded');
+        }
+        // Make it globally accessible
+        window.toggleColumns = toggleColumns;
+
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const view = btn.dataset.view;
+                document.getElementById('stories-view').style.display = view === 'stories' ? 'block' : 'none';
+                document.getElementById('log-view').style.display = view === 'log' ? 'block' : 'none';
+            });
+        });
+
+        // Form submission
+        setupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const projectName = document.getElementById('project-name').value;
+            const description = document.getElementById('description').value;
+            const outputDir = document.getElementById('output-dir').value;
+
+            const backend = Array.from(document.querySelectorAll('input[name="backend"]:checked')).map(cb => cb.value);
+            const database = Array.from(document.querySelectorAll('input[name="database"]:checked')).map(cb => cb.value);
+            const features = Array.from(document.querySelectorAll('input[name="features"]:checked')).map(cb => cb.value);
+            const dataSources = Array.from(document.querySelectorAll('input[name="datasource"]:checked')).map(cb => cb.value);
+
+            // Gather data source details
+            const dataSourceDetails = {};
+
+            if (dataSources.includes('legacy-db')) {
+                dataSourceDetails.legacyDatabase = {
+                    type: document.getElementById('legacy-db-type').value,
+                    connectionInfo: document.getElementById('legacy-db-connection').value
+                };
+            }
+
+            if (dataSources.includes('rest-api')) {
+                dataSourceDetails.restApi = {
+                    baseUrl: document.getElementById('rest-api-url').value,
+                    authType: document.getElementById('rest-api-auth').value,
+                    endpoints: document.getElementById('rest-api-endpoints').value
+                };
+            }
+
+            if (dataSources.includes('csv-files') || dataSources.includes('s3')) {
+                dataSourceDetails.files = {
+                    location: document.getElementById('file-location').value
+                };
+            }
+
+            // Get selected tables/endpoints from discovered schema
+            const selectedTables = Array.from(document.querySelectorAll('input[name="selected-table"]:checked')).map(cb => cb.value);
+            const selectedEndpoints = Array.from(document.querySelectorAll('input[name="selected-endpoint"]:checked')).map(cb => cb.value);
+
+            // Filter discovered schema to only include selected items
+            let filteredSchema = null;
+            if (discoveredSchema) {
+                filteredSchema = {};
+                if (discoveredSchema.tables) {
+                    filteredSchema.tables = discoveredSchema.tables.filter(t => selectedTables.includes(t.name));
+                }
+                if (discoveredSchema.endpoints) {
+                    filteredSchema.endpoints = discoveredSchema.endpoints.filter(e => selectedEndpoints.includes(e.path));
+                }
+            }
+
+            const payload = {
+                projectName,
+                description,
+                outputDir,
+                techStack: { backend, database, features },
+                dataSources,
+                dataSourceDetails,
+                discoveredSchema: filteredSchema
+            };
+
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+
+            try {
+                const response = await fetch('/api/project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Failed to start project');
+
+                const data = await response.json();
+                stories = data.stories || [];
+
+                projectTitle.textContent = projectName;
+                renderStories();
+
+                setupSection.style.display = 'none';
+                progressSection.style.display = 'block';
+
+                connectWebSocket(data.sessionId);
+            } catch (err) {
+                console.error(err);
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Building';
+                alert('Failed to start project: ' + err.message);
+            }
+        });
+
+        function renderStories() {
+            storyList.innerHTML = stories.map(story => `
+                <li class="story-item ${story.status}">
+                    <div class="story-status">
+                        <div class="story-status-icon">
+                            ${story.status === 'complete' ? '✓' : ''}
+                        </div>
+                    </div>
+                    <div class="story-content">
+                        <h4>${story.id}: ${story.title}</h4>
+                        <p>${story.description}</p>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function addLogLine(message, type = '') {
+            const line = document.createElement('div');
+            line.className = 'log-line ' + type;
+            line.textContent = message;
+            logOutput.appendChild(line);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function connectWebSocket(sessionId) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/${sessionId}`);
+
+            ws.onopen = () => {
+                addLogLine('Connected to Monty...', 'info');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleEvent(data);
+            };
+
+            ws.onclose = () => {
+                addLogLine('Disconnected from Monty', 'info');
+            };
+
+            ws.onerror = (err) => {
+                addLogLine('WebSocket error', 'error');
+                console.error(err);
+            };
+        }
+
+        function handleEvent(event) {
+            switch (event.type) {
+                case 'iteration':
+                    // The famous loop!
+                    document.getElementById('iteration-indicator').style.display = 'block';
+                    document.getElementById('iteration-current').textContent = event.current;
+                    document.getElementById('iteration-total').textContent = event.total;
+                    const progress = (event.current / event.total) * 100;
+                    document.getElementById('iteration-progress').style.width = progress + '%';
+                    addLogLine(`Iteration ${event.current} of ${event.total}`, 'info');
+                    break;
+
+                case 'story_start':
+                    updateStoryStatus(event.storyId, 'in-progress');
+                    addLogLine(`Starting: ${event.storyId} - ${event.title}`, 'info');
+                    break;
+
+                case 'story_complete':
+                    updateStoryStatus(event.storyId, 'complete');
+                    addLogLine(`Completed: ${event.storyId}`, 'success');
+                    break;
+
+                case 'tool_call':
+                    addLogLine(`Tool: ${event.tool} - ${event.description || ''}`, 'tool');
+                    break;
+
+                case 'log':
+                    addLogLine(event.message, event.level || '');
+                    break;
+
+                case 'complete':
+                    statusBadge.textContent = 'Complete';
+                    statusBadge.className = 'status-badge status-complete';
+                    addLogLine('All stories completed!', 'success');
+                    newProjectBtn.style.display = 'block';
+                    break;
+
+                case 'error':
+                    statusBadge.textContent = 'Error';
+                    statusBadge.className = 'status-badge status-error';
+                    addLogLine(`Error: ${event.message}`, 'error');
+                    newProjectBtn.style.display = 'block';
+                    break;
+
+                case 'blocked':
+                    statusBadge.textContent = 'Blocked';
+                    statusBadge.className = 'status-badge status-error';
+                    addLogLine(`Blocked: ${event.message}`, 'error');
+                    newProjectBtn.style.display = 'block';
+                    break;
+            }
+        }
+
+        function updateStoryStatus(storyId, status) {
+            const story = stories.find(s => s.id === storyId);
+            if (story) {
+                story.status = status;
+                renderStories();
+            }
+        }
+
+        newProjectBtn.addEventListener('click', () => {
+            if (ws) ws.close();
+            stories = [];
+            logOutput.innerHTML = '';
+            storyList.innerHTML = '';
+            statusBadge.textContent = 'Running';
+            statusBadge.className = 'status-badge status-running';
+            newProjectBtn.style.display = 'none';
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start Building';
+            progressSection.style.display = 'none';
+            setupSection.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

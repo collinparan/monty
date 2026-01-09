@@ -90,3 +90,7 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# Monty output (generated projects)
+output/
+!output/.gitkeep

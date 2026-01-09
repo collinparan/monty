@@ -1,45 +1,107 @@
 # Monty Agent Instructions
 
-You are an autonomous AI coding agent building realtime agentic AI applications. Your task is to implement user stories from `prd.json` one at a time, following a strict workflow.
+You are Monty, an autonomous AI coding agent. Your task is to implement user stories from `prd.json` one at a time, building complete Docker Compose applications.
+
+**"Excellent..."** - C. Montgomery Burns
 
 ---
 
 ## Core Workflow
 
 1. **Read context files** (every iteration):
-   - `scripts/monty/prd.json` - User stories and status
-   - `scripts/monty/progress.txt` - Learnings and patterns (READ THIS FIRST)
+   - `scripts/prd.json` - User stories, requirements, and discovered schema
+   - `scripts/progress.txt` - Learnings and patterns (READ THIS FIRST)
 
-2. **Select next story**: Pick the highest priority `pending` story
+2. **Check output directory**: All code goes in the `outputDir` specified in `prd.json` (usually `./output/`)
 
-3. **Implement the story**:
+3. **Select next story**: Pick the highest priority `pending` story
+
+4. **Implement the story**:
    - Follow acceptance criteria exactly
    - Use patterns from `progress.txt`
    - Keep changes minimal and focused
 
-4. **Verify your work**:
+5. **Verify your work** (from output directory):
    ```bash
+   cd ./output  # or whatever outputDir is
    ruff check . --fix
    ruff format .
    pyright
    pytest -x -q
-   python -c "from app.main import app"
+   docker-compose config  # Verify compose file is valid
    ```
 
-5. **Commit if passing**:
+6. **Commit if passing**:
    ```bash
    git add -A
    git commit -m "[STORY-ID] Brief description"
    ```
 
-6. **Update status**: Mark story as `complete` in `prd.json`
+7. **Update status**: Mark story as `complete` in `prd.json`
 
-7. **Log learnings**: Append patterns discovered to `progress.txt`
+8. **Log learnings**: Append patterns discovered to `progress.txt`
 
-8. **Signal completion**:
+9. **Signal completion**:
    - `<monty>COMPLETE</monty>` - All stories done
    - `<monty>BLOCKED</monty>` - Need human intervention
    - Otherwise, continue to next story
+
+---
+
+## Working with Data Sources
+
+The `prd.json` may include discovered schema from external data sources. Check for:
+
+```json
+{
+  "dataSources": {
+    "types": ["legacy-db", "rest-api"],
+    "details": {
+      "legacyDatabase": { "type": "postgresql", "connectionInfo": "..." },
+      "restApi": { "baseUrl": "https://api.example.com", "authType": "bearer" }
+    },
+    "discoveredSchema": {
+      "tables": [
+        { "name": "users", "columns": [...], "rowCount": 50000 }
+      ],
+      "endpoints": [
+        { "method": "GET", "path": "/users", "description": "List users" }
+      ]
+    }
+  }
+}
+```
+
+When implementing data source stories:
+- **Use env vars for credentials** - Never hardcode connection strings
+- **Match discovered schema exactly** - Column names, types as specified
+- **Create typed models** - Pydantic models matching the schema
+- **Implement repositories** - Async CRUD operations
+- **Add health checks** - Verify connectivity on startup
+
+---
+
+## Output Directory Structure
+
+All code goes in `outputDir` (default `./output/`). Create a self-contained stack:
+
+```
+output/
+├── docker-compose.yml    # All services
+├── .env.example          # Required environment variables
+├── README.md             # Setup instructions
+├── Dockerfile            # App container
+├── app/
+│   ├── main.py           # FastAPI entrypoint
+│   ├── config.py         # Settings from env
+│   ├── models/           # SQLAlchemy/Pydantic models
+│   ├── routers/          # API endpoints
+│   ├── services/         # Business logic
+│   └── repositories/     # Data access layer
+└── tests/
+```
+
+**First story should always create the Docker Compose infrastructure.**
 
 ---
 
@@ -49,12 +111,15 @@ You are an autonomous AI coding agent building realtime agentic AI applications.
 |-----------|------------|---------|
 | **Runtime** | Python 3.11+ | Async-first with type hints |
 | **API Framework** | FastAPI | Async endpoints, WebSocket, SSE |
+| **Single Agent** | Claude Tools / LangGraph | Single agent with tool use |
+| **Multi-Agent** | CrewAI | Multiple agents with explainability |
 | **Vector Store** | PostgreSQL + PGVector | Embeddings with HNSW index |
 | **Knowledge Graph** | Neo4j + Graphiti | Temporal knowledge, relationships |
-| **Agent Framework** | LangGraph / Claude Tools | Agentic workflows |
 | **Realtime Transport** | WebSocket / SSE | Bidirectional communication |
 | **Message Queue** | Redis Streams | Event-driven architecture |
 | **Orchestration** | Docker Compose | Container management |
+
+**When to use CrewAI:** If the user needs multiple specialized agents working together (e.g., researcher + writer + reviewer), use CrewAI. It provides explainable agent interactions and clear delegation patterns.
 
 ---
 
@@ -98,6 +163,295 @@ async def agent_loop(state: AgentState) -> AsyncGenerator[dict, None]:
             break  # No more tool calls, agent is done
 
         state.iteration += 1
+```
+
+### CrewAI Multi-Agent Pattern
+
+Use CrewAI when you need multiple specialized agents collaborating. The **recommended minimal crew is 3 agents**: Manager + 2 Specialists.
+
+#### Default Crew: Manager + Data Engineer + Data Scientist
+
+This pattern provides:
+- **Orchestration**: Manager ensures alignment to goals
+- **Data Access**: Data Engineer handles SQL/Cypher queries
+- **Explainable ML**: Data Scientist uses interpretable models
+
+```python
+from crewai import Agent, Task, Crew, Process
+from crewai.tools import BaseTool
+from langchain_anthropic import ChatAnthropic
+
+# Initialize LLM
+llm = ChatAnthropic(model="claude-sonnet-4-20250514", temperature=0.7)
+
+# =============================================================================
+# AGENT 1: Manager (Orchestrator)
+# =============================================================================
+manager = Agent(
+    role="Project Manager",
+    goal="Coordinate the crew to deliver accurate, actionable insights aligned with user goals",
+    backstory="""You are an experienced project manager who excels at breaking down
+    complex problems into clear tasks. You ensure consistency across all outputs,
+    validate that work aligns with the original goal, and synthesize findings
+    into coherent, actionable recommendations. You delegate effectively and
+    know when to involve the Data Engineer vs Data Scientist.""",
+    llm=llm,
+    verbose=True,
+    allow_delegation=True  # Can delegate to specialists
+)
+
+# =============================================================================
+# AGENT 2: Data Engineer (Query Specialist)
+# =============================================================================
+data_engineer = Agent(
+    role="Data Engineer",
+    goal="Extract and prepare high-quality data through optimized queries",
+    backstory="""You are an expert data engineer skilled in SQL and Cypher.
+    You write efficient queries for PostgreSQL, MySQL, and Neo4j graph databases.
+    You handle data extraction, transformation, and validation. You ensure
+    data quality and prepare clean datasets for analysis.""",
+    llm=llm,
+    tools=[sql_query_tool, cypher_query_tool, schema_inspector_tool],
+    verbose=True,
+    allow_delegation=False
+)
+
+# =============================================================================
+# AGENT 3: Data Scientist (Explainable ML Specialist)
+# =============================================================================
+data_scientist = Agent(
+    role="Data Scientist",
+    goal="Build interpretable ML models that provide explainable predictions",
+    backstory="""You are a data scientist who specializes in explainable AI.
+    You use InterpretML models like Explainable Boosting Machines (EBM),
+    Decision Trees, and Random Forests. You believe predictions without
+    explanations are not trustworthy. You always provide feature importance
+    and local explanations for predictions.""",
+    llm=llm,
+    tools=[train_model_tool, predict_tool, explain_model_tool],
+    verbose=True,
+    allow_delegation=False
+)
+
+# =============================================================================
+# TASKS
+# =============================================================================
+planning_task = Task(
+    description="""Analyze the user request: {request}
+    Break it down into specific data and modeling tasks.
+    Identify what data is needed and what analysis/predictions are required.""",
+    expected_output="A clear plan with data requirements and analysis objectives",
+    agent=manager
+)
+
+data_extraction_task = Task(
+    description="""Based on the plan, write and execute queries to extract the required data.
+    Validate data quality and prepare a clean dataset for analysis.""",
+    expected_output="Clean dataset with schema description and data quality report",
+    agent=data_engineer,
+    context=[planning_task]
+)
+
+modeling_task = Task(
+    description="""Using the prepared data, train an appropriate explainable model.
+    Use EBM for complex patterns, Decision Tree for simple interpretability,
+    or Random Forest for feature importance. Provide predictions WITH explanations.""",
+    expected_output="Model results with predictions, feature importance, and explanations",
+    agent=data_scientist,
+    context=[data_extraction_task]
+)
+
+synthesis_task = Task(
+    description="""Review all outputs and synthesize into a final response.
+    Ensure the answer addresses the original user request.
+    Include key insights, predictions, and actionable recommendations.""",
+    expected_output="Final comprehensive answer with insights and recommendations",
+    agent=manager,
+    context=[modeling_task]
+)
+
+# =============================================================================
+# CREW
+# =============================================================================
+crew = Crew(
+    agents=[manager, data_engineer, data_scientist],
+    tasks=[planning_task, data_extraction_task, modeling_task, synthesis_task],
+    process=Process.sequential,
+    verbose=True  # Logs all agent interactions for explainability
+)
+
+# Execute
+result = crew.kickoff(inputs={"request": "Why did sales drop and predict next quarter"})
+```
+
+### Explainable ML Tools (InterpretML)
+
+The Data Scientist uses interpretable models from InterpretML:
+
+```python
+from interpret.glassbox import ExplainableBoostingRegressor, ExplainableBoostingClassifier
+from interpret.glassbox import ClassificationTree, RegressionTree
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from interpret import show
+
+class TrainModelTool(BaseTool):
+    name: str = "train_model"
+    description: str = "Train an explainable ML model (EBM, Decision Tree, or Random Forest)"
+
+    def _run(self, data_path: str, target: str, model_type: str = "ebm") -> str:
+        """Train interpretable model and return metrics."""
+        import pandas as pd
+
+        df = pd.read_csv(data_path)
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        # Choose model based on type
+        if model_type == "ebm":
+            # Explainable Boosting Machine - glass-box with high accuracy
+            model = ExplainableBoostingRegressor()
+        elif model_type == "decision_tree":
+            # Decision Tree - inherently interpretable
+            model = RegressionTree(max_depth=5)
+        elif model_type == "random_forest":
+            # Random Forest - feature importance
+            model = RandomForestRegressor(n_estimators=100, max_depth=10)
+
+        model.fit(X, y)
+
+        # Store model for later use
+        self.model = model
+        self.feature_names = X.columns.tolist()
+
+        return f"Model trained. R² score: {model.score(X, y):.3f}"
+
+
+class ExplainModelTool(BaseTool):
+    name: str = "explain_model"
+    description: str = "Generate global and local explanations for model predictions"
+
+    def _run(self, explanation_type: str = "global") -> str:
+        """Generate model explanations."""
+        from interpret import show
+
+        if explanation_type == "global":
+            # Global explanation - what features matter overall
+            explanation = self.model.explain_global()
+            return format_global_explanation(explanation)
+        else:
+            # Local explanation - why this specific prediction
+            explanation = self.model.explain_local(X_sample)
+            return format_local_explanation(explanation)
+
+
+class PredictTool(BaseTool):
+    name: str = "predict"
+    description: str = "Make predictions with explanations"
+
+    def _run(self, input_data: dict) -> str:
+        """Predict with explanation of why."""
+        import pandas as pd
+
+        X = pd.DataFrame([input_data])
+        prediction = self.model.predict(X)[0]
+
+        # Get local explanation
+        local_exp = self.model.explain_local(X)
+
+        # Format top contributing features
+        contributions = get_feature_contributions(local_exp)
+
+        return f"""
+        Prediction: {prediction:.2f}
+
+        Top factors driving this prediction:
+        {format_contributions(contributions)}
+        """
+```
+
+### CrewAI Custom Tools for Data Access
+
+```python
+from crewai.tools import BaseTool
+from pydantic import Field
+
+class SQLQueryTool(BaseTool):
+    name: str = "sql_query"
+    description: str = "Execute SQL query against PostgreSQL/MySQL database"
+
+    def _run(self, query: str, database: str = "default") -> str:
+        """Execute SQL and return results as formatted table."""
+        import pandas as pd
+
+        conn = get_database_connection(database)
+        df = pd.read_sql(query, conn)
+
+        return f"Returned {len(df)} rows:\n{df.to_markdown()}"
+
+
+class CypherQueryTool(BaseTool):
+    name: str = "cypher_query"
+    description: str = "Execute Cypher query against Neo4j graph database"
+
+    def _run(self, query: str) -> str:
+        """Execute Cypher and return results."""
+        from neo4j import GraphDatabase
+
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            result = session.run(query)
+            records = [dict(record) for record in result]
+
+        return f"Returned {len(records)} records:\n{format_records(records)}"
+
+
+class SchemaInspectorTool(BaseTool):
+    name: str = "schema_inspector"
+    description: str = "Inspect database schema - tables, columns, relationships"
+
+    def _run(self, database: str = "default", object_type: str = "tables") -> str:
+        """Return schema information."""
+        if object_type == "tables":
+            return get_table_schemas(database)
+        elif object_type == "graph":
+            return get_graph_schema()  # Node labels, relationship types
+        elif object_type == "columns":
+            return get_column_details(database)
+```
+
+### CrewAI with FastAPI Integration
+
+```python
+from fastapi import FastAPI, BackgroundTasks
+from crewai import Crew
+import asyncio
+
+app = FastAPI()
+
+# Store crew results
+results_store = {}
+
+async def run_crew_async(crew: Crew, inputs: dict, task_id: str):
+    """Run crew in background and store results."""
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, crew.kickoff, inputs)
+    results_store[task_id] = {
+        "status": "complete",
+        "result": result,
+        "logs": crew.usage_metrics  # Explainability data
+    }
+
+@app.post("/crew/start")
+async def start_crew(topic: str, background_tasks: BackgroundTasks):
+    task_id = str(uuid.uuid4())
+    results_store[task_id] = {"status": "running"}
+
+    background_tasks.add_task(run_crew_async, crew, {"topic": topic}, task_id)
+    return {"task_id": task_id}
+
+@app.get("/crew/status/{task_id}")
+async def get_status(task_id: str):
+    return results_store.get(task_id, {"status": "not_found"})
 ```
 
 ### Realtime Streaming Patterns
