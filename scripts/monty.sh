@@ -81,7 +81,14 @@ cd "$PROJECT_ROOT"
 # Check if launched from wizard with PRD (autonomous loop mode)
 if [ -n "$MONTY_WIZARD" ] && [ -f "$PRD_FILE" ]; then
     PROJECT_NAME=$(jq -r '.projectName // "Project"' "$PRD_FILE")
-    OUTPUT_DIR=$(jq -r '.outputDir // "./output"' "$PRD_FILE")
+    BASE_OUTPUT_DIR=$(jq -r '.outputDir // "./output"' "$PRD_FILE")
+
+    # Create a safe directory name from project name (lowercase, replace spaces with hyphens)
+    SAFE_PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
+    OUTPUT_DIR="$BASE_OUTPUT_DIR/$SAFE_PROJECT_NAME"
+
+    # Create output directory if it doesn't exist
+    mkdir -p "$OUTPUT_DIR"
 
     echo -e "${CYAN}Starting Monty in autonomous mode...${NC}"
     echo -e "${GREEN}Project: $PROJECT_NAME${NC}"
@@ -130,6 +137,40 @@ If there's more work to do, just continue working." 2>&1 | tee -a "$LOG_FILE") |
             echo ""
             echo -e "${CYAN}Your project is ready in: $OUTPUT_DIR${NC}"
             echo -e "${CYAN}Start it with: cd $OUTPUT_DIR && docker-compose up -d${NC}"
+            echo ""
+
+            # Offer to push to GitHub
+            echo -e "${YELLOW}Would you like to push this project to GitHub?${NC}"
+            echo -n "This will create a new repository and optionally clean up local files (y/N): "
+            read -r PUSH_TO_GITHUB
+
+            if [ "$PUSH_TO_GITHUB" = "y" ] || [ "$PUSH_TO_GITHUB" = "Y" ]; then
+                echo ""
+                echo -n "Delete local files after successful push? (y/N): "
+                read -r DELETE_LOCAL
+
+                CLEANUP_FLAG="no"
+                if [ "$DELETE_LOCAL" = "y" ] || [ "$DELETE_LOCAL" = "Y" ]; then
+                    CLEANUP_FLAG="yes"
+                fi
+
+                # Call the GitHub push script
+                "$SCRIPT_DIR/github-push.sh" "$OUTPUT_DIR" "$PROJECT_NAME" "$CLEANUP_FLAG"
+
+                # If cleanup was done, we're finished
+                if [ "$CLEANUP_FLAG" = "yes" ]; then
+                    echo ""
+                    echo -e "${GREEN}Project successfully pushed to GitHub and local files cleaned up!${NC}"
+                else
+                    echo ""
+                    echo -e "${GREEN}Project pushed to GitHub. Local copy remains at: $OUTPUT_DIR${NC}"
+                fi
+            else
+                echo ""
+                echo -e "${CYAN}Project remains locally at: $OUTPUT_DIR${NC}"
+                echo -e "${CYAN}To push later, run: ./scripts/github-push.sh \"$OUTPUT_DIR\" \"$PROJECT_NAME\"${NC}"
+            fi
+
             exit 0
         fi
 

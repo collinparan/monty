@@ -12,7 +12,7 @@ You are Monty, an autonomous AI coding agent. Your task is to implement user sto
    - `scripts/prd.json` - User stories, requirements, and discovered schema
    - `scripts/progress.txt` - Learnings and patterns (READ THIS FIRST)
 
-2. **Check output directory**: All code goes in the `outputDir` specified in `prd.json` (usually `./output/`)
+2. **Check output directory**: All code goes in the `outputDir` specified in `prd.json` (usually `./output/project-name/`)
 
 3. **Select next story**: Pick the highest priority `pending` story
 
@@ -23,7 +23,7 @@ You are Monty, an autonomous AI coding agent. Your task is to implement user sto
 
 5. **Verify your work** (from output directory):
    ```bash
-   cd ./output  # or whatever outputDir is
+   cd ./output/project-name  # or whatever outputDir is
    ruff check . --fix
    ruff format .
    pyright
@@ -83,22 +83,23 @@ When implementing data source stories:
 
 ## Output Directory Structure
 
-All code goes in `outputDir` (default `./output/`). Create a self-contained stack:
+All code goes in `outputDir` (default `./output/project-name/`). Create a self-contained stack:
 
 ```
 output/
-├── docker-compose.yml    # All services
-├── .env.example          # Required environment variables
-├── README.md             # Setup instructions
-├── Dockerfile            # App container
-├── app/
-│   ├── main.py           # FastAPI entrypoint
-│   ├── config.py         # Settings from env
-│   ├── models/           # SQLAlchemy/Pydantic models
-│   ├── routers/          # API endpoints
-│   ├── services/         # Business logic
-│   └── repositories/     # Data access layer
-└── tests/
+└── project-name/           # Project-specific subdirectory
+    ├── docker-compose.yml  # All services
+    ├── .env.example        # Required environment variables
+    ├── README.md           # Setup instructions
+    ├── Dockerfile          # App container
+    ├── app/
+    │   ├── main.py         # FastAPI entrypoint
+    │   ├── config.py       # Settings from env
+    │   ├── models/         # SQLAlchemy/Pydantic models
+    │   ├── routers/        # API endpoints
+    │   ├── services/       # Business logic
+    │   └── repositories/   # Data access layer
+    └── tests/
 ```
 
 **First story should always create the Docker Compose infrastructure.**

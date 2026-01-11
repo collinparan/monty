@@ -594,10 +594,12 @@
                 <div class="card">
                     <h2>Output Directory</h2>
                     <div class="form-group">
-                        <label for="output-dir">Where should Monty create your project?</label>
-                        <input type="text" id="output-dir" placeholder="./output/my-project" value="./output">
+                        <label for="output-dir">Base output directory</label>
+                        <input type="text" id="output-dir" placeholder="./output" value="./output">
                         <p style="color: #666; font-size: 0.8rem; margin-top: 8px;">
-                            Projects are created in the output/ folder, separate from Monty itself.
+                            Your project will be created in a subdirectory named after your project.<br>
+                            For example: <code>./output/your-project-name/</code><br>
+                            After completion, you can push to GitHub and optionally delete local files.
                         </p>
                     </div>
                 </div>
